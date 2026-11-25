@@ -1,0 +1,617 @@
+{
+ "app": {
+  "version": "0.1.0",
+  "bank_path": "/home/usuario/.local/share/skillbank/bank",
+  "config_path": "/home/usuario/.config/skillbank/config.toml",
+  "home": "/home/usuario",
+  "skills": 5,
+  "cli_on_path": "/usr/bin/skillbank",
+  "guide": [
+   {
+    "agent": "claude",
+    "name": "Claude Code",
+    "present": true,
+    "state": "current"
+   },
+   {
+    "agent": "codex",
+    "name": "Codex",
+    "present": true,
+    "state": "current"
+   },
+   {
+    "agent": "cursor",
+    "name": "Cursor",
+    "present": true,
+    "state": "current"
+   },
+   {
+    "agent": "antigravity",
+    "name": "Antigravity",
+    "present": false,
+    "state": "missing"
+   }
+  ]
+ },
+ "list": [
+  {
+   "name": "commits-convencionales",
+   "description": "Escribe mensajes de commit siguiendo Conventional Commits en español. Úsala cuando el usuario pida hacer un commit.",
+   "tags": [
+    "git"
+   ],
+   "created_at": "2026-11-25T20:52:42.310301152Z",
+   "updated_at": "2026-11-25T20:52:42.310565008Z",
+   "content_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [
+    "model"
+   ],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/commits-convencionales"
+  },
+  {
+   "name": "extraer-pdf",
+   "description": "Extrae texto y tablas de archivos PDF y los resume. Úsala cuando el usuario comparta un PDF o pida leer facturas.",
+   "tags": [
+    "documentos",
+    "pdf"
+   ],
+   "created_at": "2026-11-25T20:52:42.304813510Z",
+   "updated_at": "2026-11-25T20:52:42.305087790Z",
+   "content_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/extraer-pdf"
+  },
+  {
+   "name": "informe-semanal",
+   "description": "Genera el informe semanal de avances a partir de los commits y tickets. Úsala cada viernes o cuando el usuario pida un resumen de la semana.",
+   "tags": [
+    "reportes"
+   ],
+   "created_at": "2026-11-25T20:52:42.316651738Z",
+   "updated_at": "2026-11-25T20:52:42.316651738Z",
+   "content_hash": "sha256:0ae207972f258814ad895a32d0d699c4bc277a638c2be1c3a83363faac487d39",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/informe-semanal"
+  },
+  {
+   "name": "notas-largas",
+   "description": "Toma notas de reuniones. Úsala cuando el usuario grabe una reunión. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra.",
+   "tags": [
+    "reuniones"
+   ],
+   "created_at": "2026-11-25T20:52:55.856180319Z",
+   "updated_at": "2026-11-25T20:52:55.856345007Z",
+   "content_hash": "sha256:22d3035e1b707b3f2f4549deaaad1028942e585f408f0421f57cff26132830ab",
+   "valid": false,
+   "errors": 1,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/notas-largas"
+  },
+  {
+   "name": "revisar-prs",
+   "description": "Revisa pull requests de GitHub: busca bugs, riesgos de seguridad y estilo. Úsala cuando el usuario pida revisar un PR o un diff.",
+   "tags": [
+    "git",
+    "revision"
+   ],
+   "created_at": "2026-11-25T20:52:42.297602593Z",
+   "updated_at": "2026-11-25T20:52:42.340781191Z",
+   "content_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/revisar-prs"
+  }
+ ],
+ "tags": [
+  {
+   "tag": "documentos",
+   "count": 1
+  },
+  {
+   "tag": "git",
+   "count": 2
+  },
+  {
+   "tag": "pdf",
+   "count": 1
+  },
+  {
+   "tag": "reportes",
+   "count": 1
+  },
+  {
+   "tag": "reuniones",
+   "count": 1
+  },
+  {
+   "tag": "revision",
+   "count": 1
+  }
+ ],
+ "installs": [
+  {
+   "id": "04e289fd-848e-499e-be4a-3b077a5cf69f",
+   "skill": "commits-convencionales",
+   "scope": "project",
+   "agents": [
+    "claude",
+    "cursor"
+   ],
+   "project_root": "/home/usuario/Proyectos/web-app",
+   "path": "/home/usuario/Proyectos/web-app/.claude/skills/commits-convencionales",
+   "installed_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+   "installed_at": "2026-11-25T20:52:42.310877896Z",
+   "origin": "push",
+   "status": "up_to_date",
+   "status_es": "al día",
+   "disk_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+   "bank_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631"
+  },
+  {
+   "id": "cebdcc5c-519e-4508-b8a8-d183c11311fa",
+   "skill": "extraer-pdf",
+   "scope": "project",
+   "agents": [
+    "claude"
+   ],
+   "project_root": "/home/usuario/Proyectos/api",
+   "path": "/home/usuario/Proyectos/api/.claude/skills/extraer-pdf",
+   "installed_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "installed_at": "2026-11-25T20:52:42.336467276Z",
+   "origin": "pull",
+   "status": "up_to_date",
+   "status_es": "al día",
+   "disk_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "bank_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f"
+  },
+  {
+   "id": "0c84f2f5-6f77-4b69-b94f-8ce2cd785fe6",
+   "skill": "extraer-pdf",
+   "scope": "project",
+   "agents": [
+    "claude",
+    "cursor"
+   ],
+   "project_root": "/home/usuario/Proyectos/web-app",
+   "path": "/home/usuario/Proyectos/web-app/.claude/skills/extraer-pdf",
+   "installed_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "installed_at": "2026-11-25T20:52:42.305336024Z",
+   "origin": "push",
+   "status": "up_to_date",
+   "status_es": "al día",
+   "disk_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "bank_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f"
+  },
+  {
+   "id": "95c98761-c106-499c-9def-505413eb222c",
+   "skill": "revisar-prs",
+   "scope": "project",
+   "agents": [
+    "claude"
+   ],
+   "project_root": "/home/usuario/Proyectos/api",
+   "path": "/home/usuario/Proyectos/api/.claude/skills/revisar-prs",
+   "installed_hash": "sha256:f7f6c05b94e03965c1f3eee083069671b6b7c726b1ad189ed54d16aa6e02a5a0",
+   "installed_at": "2026-11-25T20:52:42.336366746Z",
+   "origin": "pull",
+   "status": "outdated",
+   "status_es": "desactualizada",
+   "disk_hash": "sha256:f7f6c05b94e03965c1f3eee083069671b6b7c726b1ad189ed54d16aa6e02a5a0",
+   "bank_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e"
+  },
+  {
+   "id": "b03f59e8-3baf-498a-aa73-3aeae153dec9",
+   "skill": "revisar-prs",
+   "scope": "project",
+   "agents": [
+    "claude",
+    "cursor"
+   ],
+   "project_root": "/home/usuario/Proyectos/web-app",
+   "path": "/home/usuario/Proyectos/web-app/.claude/skills/revisar-prs",
+   "installed_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+   "installed_at": "2026-11-25T20:52:42.341006978Z",
+   "origin": "push",
+   "status": "up_to_date",
+   "status_es": "al día",
+   "disk_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+   "bank_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e"
+  }
+ ],
+ "details": {
+  "commits-convencionales": {
+   "name": "commits-convencionales",
+   "description": "Escribe mensajes de commit siguiendo Conventional Commits en español. Úsala cuando el usuario pida hacer un commit.",
+   "tags": [
+    "git"
+   ],
+   "created_at": "2026-11-25T20:52:42.310301152Z",
+   "updated_at": "2026-11-25T20:52:42.310565008Z",
+   "content_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [
+    "model"
+   ],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/commits-convencionales",
+   "frontmatter": {
+    "name": "commits-convencionales",
+    "model": "sonnet",
+    "allowed-tools": "Bash(git:*) Read",
+    "description": "Escribe mensajes de commit siguiendo Conventional Commits en español. Úsala cuando el usuario pida hacer un commit."
+   },
+   "body": "\n# Commits convencionales\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Primer paso.\n2. Segundo paso.\n\n## Ejemplos\n\n**Entrada:** …\n\n**Salida esperada:** …\n",
+   "files": [
+    {
+     "path": "SKILL.md",
+     "size": 448,
+     "executable": false
+    }
+   ],
+   "diagnostics": [
+    {
+     "code": "I_CC_ONLY",
+     "severity": "info",
+     "message": "`model` solo lo entiende Claude Code.",
+     "file": "SKILL.md",
+     "line": 3,
+     "field": "model",
+     "tag": "solo Claude Code"
+    }
+   ],
+   "meta": {
+    "schema": 1,
+    "name": "commits-convencionales",
+    "tags": [
+     "git"
+    ],
+    "created_at": "2026-11-25T20:52:42.310301152Z",
+    "updated_at": "2026-11-25T20:52:42.310565008Z",
+    "content_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+    "source": {
+     "kind": "push",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/commits-convencionales",
+     "host": "abraham-lap"
+    },
+    "executables": [],
+    "notes": ""
+   },
+   "installs": [
+    {
+     "id": "04e289fd-848e-499e-be4a-3b077a5cf69f",
+     "skill": "commits-convencionales",
+     "scope": "project",
+     "agents": [
+      "claude",
+      "cursor"
+     ],
+     "project_root": "/home/usuario/Proyectos/web-app",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/commits-convencionales",
+     "installed_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+     "installed_at": "2026-11-25T20:52:42.310877896Z",
+     "origin": "push",
+     "status": "up_to_date",
+     "status_es": "al día",
+     "disk_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631",
+     "bank_hash": "sha256:9fb87b7011c31bdd410160684c32a9c839b944cb78d4f7c84c238ef2721b9631"
+    }
+   ],
+   "pull_command": "skillbank pull commits-convencionales",
+   "_files": {
+    "SKILL.md": "---\nname: commits-convencionales\nmodel: sonnet\nallowed-tools: Bash(git:*) Read\ndescription: Escribe mensajes de commit siguiendo Conventional Commits en español. Úsala cuando el usuario pida hacer un commit.\n---\n\n# Commits convencionales\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Primer paso.\n2. Segundo paso.\n\n## Ejemplos\n\n**Entrada:** …\n\n**Salida esperada:** …\n"
+   }
+  },
+  "extraer-pdf": {
+   "name": "extraer-pdf",
+   "description": "Extrae texto y tablas de archivos PDF y los resume. Úsala cuando el usuario comparta un PDF o pida leer facturas.",
+   "tags": [
+    "documentos",
+    "pdf"
+   ],
+   "created_at": "2026-11-25T20:52:42.304813510Z",
+   "updated_at": "2026-11-25T20:52:42.305087790Z",
+   "content_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/extraer-pdf",
+   "frontmatter": {
+    "name": "extraer-pdf",
+    "description": "Extrae texto y tablas de archivos PDF y los resume. Úsala cuando el usuario comparta un PDF o pida leer facturas."
+   },
+   "body": "\n# Extraer pdf\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Sigue los pasos principales aquí.\n2. Para los detalles, lee [la guía de referencia](references/guia.md) solo cuando haga falta.\n",
+   "files": [
+    {
+     "path": "SKILL.md",
+     "size": 420,
+     "executable": false
+    },
+    {
+     "path": "references/guia.md",
+     "size": 139,
+     "executable": false
+    }
+   ],
+   "diagnostics": [],
+   "meta": {
+    "schema": 1,
+    "name": "extraer-pdf",
+    "tags": [
+     "documentos",
+     "pdf"
+    ],
+    "created_at": "2026-11-25T20:52:42.304813510Z",
+    "updated_at": "2026-11-25T20:52:42.305087790Z",
+    "content_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+    "source": {
+     "kind": "push",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/extraer-pdf",
+     "host": "abraham-lap"
+    },
+    "executables": [],
+    "notes": ""
+   },
+   "installs": [
+    {
+     "id": "cebdcc5c-519e-4508-b8a8-d183c11311fa",
+     "skill": "extraer-pdf",
+     "scope": "project",
+     "agents": [
+      "claude"
+     ],
+     "project_root": "/home/usuario/Proyectos/api",
+     "path": "/home/usuario/Proyectos/api/.claude/skills/extraer-pdf",
+     "installed_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+     "installed_at": "2026-11-25T20:52:42.336467276Z",
+     "origin": "pull",
+     "status": "up_to_date",
+     "status_es": "al día",
+     "disk_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+     "bank_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f"
+    },
+    {
+     "id": "0c84f2f5-6f77-4b69-b94f-8ce2cd785fe6",
+     "skill": "extraer-pdf",
+     "scope": "project",
+     "agents": [
+      "claude",
+      "cursor"
+     ],
+     "project_root": "/home/usuario/Proyectos/web-app",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/extraer-pdf",
+     "installed_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+     "installed_at": "2026-11-25T20:52:42.305336024Z",
+     "origin": "push",
+     "status": "up_to_date",
+     "status_es": "al día",
+     "disk_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f",
+     "bank_hash": "sha256:b3b033a7da10c3cad3b63a4a5496f059043ac4a70cd927ee88a8cb396600625f"
+    }
+   ],
+   "pull_command": "skillbank pull extraer-pdf",
+   "_files": {
+    "SKILL.md": "---\nname: extraer-pdf\ndescription: Extrae texto y tablas de archivos PDF y los resume. Úsala cuando el usuario comparta un PDF o pida leer facturas.\n---\n\n# Extraer pdf\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Sigue los pasos principales aquí.\n2. Para los detalles, lee [la guía de referencia](references/guia.md) solo cuando haga falta.\n",
+    "references/guia.md": "# Guía de referencia de Extraer pdf\n\n## Contenido\n\n- [Conceptos](#conceptos)\n- [Detalles](#detalles)\n\n## Conceptos\n\n…\n\n## Detalles\n\n…\n"
+   }
+  },
+  "informe-semanal": {
+   "name": "informe-semanal",
+   "description": "Genera el informe semanal de avances a partir de los commits y tickets. Úsala cada viernes o cuando el usuario pida un resumen de la semana.",
+   "tags": [
+    "reportes"
+   ],
+   "created_at": "2026-11-25T20:52:42.316651738Z",
+   "updated_at": "2026-11-25T20:52:42.316651738Z",
+   "content_hash": "sha256:0ae207972f258814ad895a32d0d699c4bc277a638c2be1c3a83363faac487d39",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/informe-semanal",
+   "frontmatter": {
+    "name": "informe-semanal",
+    "description": "Genera el informe semanal de avances a partir de los commits y tickets. Úsala cada viernes o cuando el usuario pida un resumen de la semana."
+   },
+   "body": "\n# Informe semanal\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Primer paso.\n2. Segundo paso.\n\n## Ejemplos\n\n**Entrada:** …\n\n**Salida esperada:** …\n",
+   "files": [
+    {
+     "path": "SKILL.md",
+     "size": 412,
+     "executable": false
+    }
+   ],
+   "diagnostics": [],
+   "meta": {
+    "schema": 1,
+    "name": "informe-semanal",
+    "tags": [
+     "reportes"
+    ],
+    "created_at": "2026-11-25T20:52:42.316651738Z",
+    "updated_at": "2026-11-25T20:52:42.316651738Z",
+    "content_hash": "sha256:0ae207972f258814ad895a32d0d699c4bc277a638c2be1c3a83363faac487d39",
+    "source": {
+     "kind": "new",
+     "host": "abraham-lap"
+    },
+    "executables": [],
+    "notes": ""
+   },
+   "installs": [],
+   "pull_command": "skillbank pull informe-semanal",
+   "_files": {
+    "SKILL.md": "---\nname: informe-semanal\ndescription: Genera el informe semanal de avances a partir de los commits y tickets. Úsala cada viernes o cuando el usuario pida un resumen de la semana.\n---\n\n# Informe semanal\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Primer paso.\n2. Segundo paso.\n\n## Ejemplos\n\n**Entrada:** …\n\n**Salida esperada:** …\n"
+   }
+  },
+  "notas-largas": {
+   "name": "notas-largas",
+   "description": "Toma notas de reuniones. Úsala cuando el usuario grabe una reunión. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra.",
+   "tags": [
+    "reuniones"
+   ],
+   "created_at": "2026-11-25T20:52:55.856180319Z",
+   "updated_at": "2026-11-25T20:52:55.856345007Z",
+   "content_hash": "sha256:22d3035e1b707b3f2f4549deaaad1028942e585f408f0421f57cff26132830ab",
+   "valid": false,
+   "errors": 1,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/notas-largas",
+   "frontmatter": {
+    "name": "notas-largas",
+    "description": "Toma notas de reuniones. Úsala cuando el usuario grabe una reunión. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra."
+   },
+   "body": "\n# Notas\n\nPasos.\n",
+   "files": [
+    {
+     "path": "SKILL.md",
+     "size": 1328,
+     "executable": false
+    }
+   ],
+   "diagnostics": [
+    {
+     "code": "E_DESC_LEN",
+     "severity": "error",
+     "message": "La descripción tiene 1267 caracteres (máximo 1024).",
+     "file": "SKILL.md",
+     "line": 3,
+     "field": "description",
+     "hint": "Resume y mueve los detalles al cuerpo de SKILL.md."
+    }
+   ],
+   "meta": {
+    "schema": 1,
+    "name": "notas-largas",
+    "tags": [
+     "reuniones"
+    ],
+    "created_at": "2026-11-25T20:52:55.856180319Z",
+    "updated_at": "2026-11-25T20:52:55.856345007Z",
+    "content_hash": "sha256:22d3035e1b707b3f2f4549deaaad1028942e585f408f0421f57cff26132830ab",
+    "source": {
+     "kind": "push",
+     "path": "/home/usuario/Proyectos/x/notas-largas",
+     "host": "abraham-lap"
+    },
+    "executables": [],
+    "notes": ""
+   },
+   "installs": [],
+   "pull_command": "skillbank pull notas-largas",
+   "_files": {
+    "SKILL.md": "---\nname: notas-largas\ndescription: Toma notas de reuniones. Úsala cuando el usuario grabe una reunión. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. Detalle extra. \n---\n\n# Notas\n\nPasos.\n"
+   }
+  },
+  "revisar-prs": {
+   "name": "revisar-prs",
+   "description": "Revisa pull requests de GitHub: busca bugs, riesgos de seguridad y estilo. Úsala cuando el usuario pida revisar un PR o un diff.",
+   "tags": [
+    "git",
+    "revision"
+   ],
+   "created_at": "2026-11-25T20:52:42.297602593Z",
+   "updated_at": "2026-11-25T20:52:42.340781191Z",
+   "content_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+   "valid": true,
+   "errors": 0,
+   "warnings": 0,
+   "claude_code_fields": [],
+   "path": "/home/usuario/.local/share/skillbank/bank/skills/revisar-prs",
+   "frontmatter": {
+    "name": "revisar-prs",
+    "description": "Revisa pull requests de GitHub: busca bugs, riesgos de seguridad y estilo. Úsala cuando el usuario pida revisar un PR o un diff."
+   },
+   "body": "\n# Revisar prs\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Ejecuta `scripts/ejemplo.sh <argumento>` (ruta relativa a esta skill).\n2. Revisa la salida y continúa.\n\nEl script se ejecuta, no se lee: su contenido no ocupa contexto.\nMejora: revisa también los tests.\n",
+   "files": [
+    {
+     "path": "SKILL.md",
+     "size": 512,
+     "executable": false
+    },
+    {
+     "path": "scripts/ejemplo.sh",
+     "size": 133,
+     "executable": true
+    }
+   ],
+   "diagnostics": [],
+   "meta": {
+    "schema": 1,
+    "name": "revisar-prs",
+    "tags": [
+     "git",
+     "revision"
+    ],
+    "created_at": "2026-11-25T20:52:42.297602593Z",
+    "updated_at": "2026-11-25T20:52:42.340781191Z",
+    "content_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+    "source": {
+     "kind": "push",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/revisar-prs",
+     "host": "abraham-lap"
+    },
+    "executables": [
+     "scripts/ejemplo.sh"
+    ],
+    "notes": ""
+   },
+   "installs": [
+    {
+     "id": "95c98761-c106-499c-9def-505413eb222c",
+     "skill": "revisar-prs",
+     "scope": "project",
+     "agents": [
+      "claude"
+     ],
+     "project_root": "/home/usuario/Proyectos/api",
+     "path": "/home/usuario/Proyectos/api/.claude/skills/revisar-prs",
+     "installed_hash": "sha256:f7f6c05b94e03965c1f3eee083069671b6b7c726b1ad189ed54d16aa6e02a5a0",
+     "installed_at": "2026-11-25T20:52:42.336366746Z",
+     "origin": "pull",
+     "status": "outdated",
+     "status_es": "desactualizada",
+     "disk_hash": "sha256:f7f6c05b94e03965c1f3eee083069671b6b7c726b1ad189ed54d16aa6e02a5a0",
+     "bank_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e"
+    },
+    {
+     "id": "b03f59e8-3baf-498a-aa73-3aeae153dec9",
+     "skill": "revisar-prs",
+     "scope": "project",
+     "agents": [
+      "claude",
+      "cursor"
+     ],
+     "project_root": "/home/usuario/Proyectos/web-app",
+     "path": "/home/usuario/Proyectos/web-app/.claude/skills/revisar-prs",
+     "installed_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+     "installed_at": "2026-11-25T20:52:42.341006978Z",
+     "origin": "push",
+     "status": "up_to_date",
+     "status_es": "al día",
+     "disk_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e",
+     "bank_hash": "sha256:53cb1791843afeeaafdb7bbe2e8060092e124e67d0b92baec5433a6448df7f0e"
+    }
+   ],
+   "pull_command": "skillbank pull revisar-prs",
+   "_files": {
+    "SKILL.md": "---\nname: revisar-prs\ndescription: \"Revisa pull requests de GitHub: busca bugs, riesgos de seguridad y estilo. Úsala cuando el usuario pida revisar un PR o un diff.\"\n---\n\n# Revisar prs\n\n## Cuándo usarla\n\n- Describe aquí las situaciones en las que el agente debe activar esta skill.\n\n## Instrucciones\n\n1. Ejecuta `scripts/ejemplo.sh <argumento>` (ruta relativa a esta skill).\n2. Revisa la salida y continúa.\n\nEl script se ejecuta, no se lee: su contenido no ocupa contexto.\nMejora: revisa también los tests.\n",
+    "scripts/ejemplo.sh": "#!/usr/bin/env bash\n# Script de ejemplo: reemplázalo por el tuyo.\nset -euo pipefail\necho \"Hola desde la skill: ${1:-sin argumento}\"\n"
+   }
+  }
+ }
+}

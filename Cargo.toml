@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/skillbank-core", "crates/skillbank-cli"]
+members = ["crates/skillbank-core", "crates/skillbank-cli", "src-tauri"]
 default-members = ["crates/skillbank-core", "crates/skillbank-cli"]
 
 [workspace.package]

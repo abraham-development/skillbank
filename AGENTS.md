@@ -12,7 +12,10 @@ App de escritorio (Tauri 2 + React) y CLI (`skillbank`) para guardar Agent Skill
   `assets/guide/`). La app y el CLI no duplican lógica: la llaman desde aquí.
 - `crates/skillbank-cli/` — el binario `skillbank` (clap). `cmd.rs` adapta el núcleo a
   la salida humana/JSON de `output.rs`.
-- `src-tauri/` y `src/` — app de escritorio (Fase 2, aún no existe).
+- `src-tauri/` — app de escritorio (Tauri 2): `commands.rs` expone el núcleo a la interfaz
+  (solo lectura por ahora), `watcher.rs` emite `bank-changed`/`installs-changed`.
+- `src/` — interfaz React + Vite + Tailwind 4 (`pages/`, `components/`, `lib/api.ts`).
+  `src/dev/` es una vista previa con datos de ejemplo para el navegador (solo en `pnpm dev`).
 - `docs/` — reglas del validador, formato JSON del CLI, checklist manual.
 
 ## Comandos
@@ -22,6 +25,9 @@ cargo test --workspace                      # todas las pruebas
 cargo clippy --workspace --all-targets      # debe quedar en 0 avisos
 cargo fmt --all
 scripts/install-cli.sh                      # instala ~/.local/bin/skillbank + guía
+pnpm tauri dev                              # app de escritorio en modo desarrollo
+pnpm dev                                    # solo la interfaz en el navegador (datos de ejemplo)
+scripts/install-desktop-entry.sh            # compila e instala la app en "Mostrar aplicaciones"
 ```
 
 ## Reglas
@@ -34,4 +40,7 @@ scripts/install-cli.sh                      # instala ~/.local/bin/skillbank + g
 - Nunca crear symlinks al instalar; nunca escribir a través de un symlink; nunca escribir
   en `~/.claude/skills/synced/`.
 - Las pruebas del CLI usan un HOME temporal (`tests/cli.rs`): no toques el HOME real.
+- `src/dev/fixtures.json` no debe contener rutas ni datos personales reales.
+- En Linux la ventana se identifica como `banco-de-skills` (nombre del binario): la entrada
+  `.desktop` debe llamarse igual y llevar `StartupWMClass=banco-de-skills`.
 - El plan del proyecto (fases y decisiones) está en `docs/plan.md`.

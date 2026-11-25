@@ -5,9 +5,9 @@ Cursor o Antigravity, le dices al agente *"sube esta skill a mi banco"*, y en cu
 proyecto le dices *"trae la skill X de mi banco"*. Funciona con el estándar abierto
 [Agent Skills](https://agentskills.io/specification).
 
-> Estado: **Fase 1 completa** — núcleo + CLI `skillbank` listos (incluye importar/exportar,
-> registro de instalaciones y diagnóstico). La app de escritorio, que aparecerá en *Mostrar
-> aplicaciones* de Ubuntu (Fase 2), y la sincronización con Google Drive (Fase 3) vienen después.
+> Estado: **Fase 1 completa** (núcleo + CLI) y **Fase 2a** de la app de escritorio: biblioteca
+> con búsqueda y filtros, detalle de cada skill y refresco automático cuando un agente sube algo.
+> Siguen el editor y las acciones desde la app (2b–2d) y la sincronización con Google Drive (Fase 3).
 > Ver [docs/plan.md](docs/plan.md).
 
 ## Instalación
@@ -16,6 +16,15 @@ proyecto le dices *"trae la skill X de mi banco"*. Funciona con el estándar abi
 # Requiere Rust (rustup). Instala ~/.local/bin/skillbank y la skill guía en tus agentes:
 scripts/install-cli.sh
 ```
+
+Para la **app de escritorio** (aparece en *Mostrar aplicaciones* de Ubuntu, sin sudo):
+
+```bash
+scripts/install-desktop-entry.sh      # compila e instala; --uninstall la quita
+```
+
+Requiere las librerías de Tauri: `sudo apt install libwebkit2gtk-4.1-dev build-essential
+curl wget file pkg-config libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev`.
 
 La **skill guía** `banco-de-skills` se instala en `~/.claude/skills/` y `~/.agents/skills/`
 (y `~/.gemini/config/skills/` si usas Antigravity). Es lo que hace que tus agentes entiendan
@@ -85,6 +94,8 @@ Todos los comandos aceptan `--json` (un único objeto con `ok`, `code`, `exit_co
 ```bash
 cargo test --workspace
 cargo clippy --workspace --all-targets
+pnpm install && pnpm tauri dev      # app de escritorio en modo desarrollo
+pnpm dev                            # interfaz en el navegador con datos de ejemplo
 ```
 
 Ver [AGENTS.md](AGENTS.md) para las convenciones del repositorio.

@@ -21,6 +21,11 @@ Marca cada punto al probarlo con agentes reales.
 
 ## Fase 2 — App
 
+- [ ] `scripts/install-desktop-entry.sh` y "Banco de Skills" aparece en **Mostrar aplicaciones**.
+- [ ] Con la app abierta, un agente sube una skill y aparece sola en la Biblioteca
+      (para diagnosticar: `SKILLBANK_DEBUG=1 banco-de-skills` muestra los eventos en la terminal).
+- [ ] Al anclarla al dock, la ventana abierta se agrupa bajo el mismo ícono.
+
 - [ ] Un `push` desde el CLI aparece en la app en menos de 1 s.
 - [ ] Editar en la app mientras el CLI sobrescribe la misma skill muestra el aviso de conflicto.
 - [ ] "Banco de Skills" aparece en **Mostrar aplicaciones** (Show Apps) con su ícono, abre la app y se puede anclar al dock.
