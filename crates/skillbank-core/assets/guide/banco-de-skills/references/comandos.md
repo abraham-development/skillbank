@@ -3,6 +3,7 @@
 ## Contenido
 
 - [Opciones globales](#opciones-globales)
+- [connect](#connect)
 - [push](#push)
 - [pull](#pull)
 - [list, search, show, path](#list-search-show-path)
@@ -23,6 +24,12 @@
 | `-q`, `--quiet` | Menos salida en modo humano. |
 | `--bank <dir>` | Usa otro banco (pruebas). |
 | `--lock-timeout <s>` | Segundos de espera si el banco está ocupado (por defecto 30). |
+
+## connect
+
+`skillbank connect [--agent X] [--json]` — saluda al banco: la app de escritorio marca al agente
+como conectado. `data`: `{agent, connected_at, guide, first_time}`. Sin `--agent` se detecta por
+el entorno (`CLAUDECODE=1` → claude, `CURSOR_AGENT` → cursor); Antigravity debe pasar `--agent`.
 
 ## push
 
@@ -45,8 +52,7 @@
   ejecuta el comando (si se detecta), luego los marcadores del proyecto y luego la configuración.
 - Carpetas por agente (proyecto / global):
   - Claude Code: `.claude/skills` / `~/.claude/skills`
-  - Codex: `.agents/skills` / `~/.agents/skills`
-  - Cursor: `.cursor/skills` / `~/.cursor/skills` (también lee `.agents` y `.claude`)
+  - Cursor: `.cursor/skills` / `~/.cursor/skills` (también lee `.agents`, `.claude` y `~/.claude`)
   - Antigravity: `.agents/skills` / `~/.gemini/config/skills`
 - Sin `--no-dedupe`, no se copia dos veces si un agente ya lee otra carpeta del plan.
 - Si la copia local no se tocó desde que se instaló, se actualiza sola (sin `--force`).

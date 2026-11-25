@@ -14,12 +14,6 @@
     "state": "current"
    },
    {
-    "agent": "codex",
-    "name": "Codex",
-    "present": true,
-    "state": "current"
-   },
-   {
     "agent": "cursor",
     "name": "Cursor",
     "present": true,

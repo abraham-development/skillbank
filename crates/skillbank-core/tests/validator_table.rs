@@ -185,7 +185,7 @@ fn campo_cc_con_agente_destino() {
         target_agents: agents,
         ..Default::default()
     };
-    let r = validate_text(&base("model: sonnet"), &opts(vec![AgentId::Codex]));
+    let r = validate_text(&base("model: sonnet"), &opts(vec![AgentId::Antigravity]));
     assert_eq!(sev_of(&r, "W_CC_ONLY_TARGET"), Some(Severity::Warning));
     // Cursor sí entiende `paths`.
     let r = validate_text(&base("paths: src/**"), &opts(vec![AgentId::Cursor]));

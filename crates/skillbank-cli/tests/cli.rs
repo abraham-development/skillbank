@@ -46,6 +46,7 @@ impl Env {
             "XDG_DATA_HOME",
             "XDG_STATE_HOME",
             "CLAUDECODE",
+            "CURSOR_AGENT",
             "SKILLBANK_BANK",
             "SKILLBANK_CONFIG",
             "SKILLBANK_STATE_DIR",
@@ -341,13 +342,18 @@ fn dedupe_y_destinos() {
     assert!(b.join(".claude/skills/demo").is_dir());
     assert!(!b.join(".cursor/skills/demo").exists());
 
-    let o = e.json(&b, &["pull", "demo", "--agent", "claude,codex"]);
+    let o = e.json(&b, &["pull", "demo", "--agent", "claude,antigravity"]);
     assert_eq!(o.json["data"]["items"].as_array().unwrap().len(), 2);
     assert!(b.join(".agents/skills/demo").is_dir());
 
-    let o = e.json(&b, &["pull", "demo", "--agent", "codex", "--global"]);
+    let o = e.json(&b, &["pull", "demo", "--agent", "antigravity", "--global"]);
     assert_eq!(o.code, 0);
-    assert!(e.home().join(".agents/skills/demo/SKILL.md").is_file());
+    assert!(e.home().join(".gemini/config/skills/demo/SKILL.md").is_file());
+
+    // Codex ya no existe.
+    let o = e.json(&b, &["pull", "demo", "--agent", "codex"]);
+    assert_eq!(o.code, 2);
+    assert!(o.json["message"].as_str().unwrap().contains("Codex ya no está soportado"));
 }
 
 #[test]
@@ -420,11 +426,11 @@ fn guia_para_agentes() {
     assert_eq!(o.json["data"][0]["action"], "unchanged");
 
     // Una skill ajena con el mismo nombre no se pisa sin --force.
-    fs::create_dir_all(e.home().join(".codex")).unwrap();
-    let foreign = e.home().join(".agents/skills/banco-de-skills");
+    fs::create_dir_all(e.home().join(".gemini")).unwrap();
+    let foreign = e.home().join(".gemini/config/skills/banco-de-skills");
     fs::create_dir_all(&foreign).unwrap();
     fs::write(foreign.join("SKILL.md"), "---\nname: banco-de-skills\ndescription: otra\n---\nx\n").unwrap();
-    let o = e.json(&a, &["agents", "install-guide", "--agent", "codex"]);
+    let o = e.json(&a, &["agents", "install-guide", "--agent", "antigravity"]);
     assert_eq!(o.code, 5);
 
     let o = e.json(&a, &["agents", "install-guide", "--uninstall", "--agent", "claude"]);
@@ -622,7 +628,7 @@ fn scan_import_no_pisa_copias_distintas_con_el_mismo_nombre() {
     let e = Env::new();
     let h = e.home();
     write_skill(&h.join(".claude/skills"), "dup", "Versión de Claude.\n");
-    write_skill(&h.join(".agents/skills"), "dup", "Versión de Codex.\n");
+    write_skill(&h.join(".agents/skills"), "dup", "Versión B.\n");
     let a = e.project("a");
     let o = e.json(&a, &["scan", "--global", "--import"]);
     assert_eq!(o.json["data"]["imported"], 1, "{}", o.stdout);
@@ -630,4 +636,79 @@ fn scan_import_no_pisa_copias_distintas_con_el_mismo_nombre() {
         o.json["data"]["entries"].as_array().unwrap().iter().map(|x| x["status"].as_str().unwrap()).collect();
     assert_eq!(st, vec!["same", "different"]);
     assert!(fs::read_to_string(e.bank().join("skills/dup/SKILL.md")).unwrap().contains("Versión de Claude"));
+}
+
+#[test]
+fn limpia_la_guia_heredada_de_codex() {
+    let e = Env::new();
+    fs::create_dir_all(e.home().join(".claude")).unwrap();
+    let a = e.project("a");
+    e.json(&a, &["agents", "install-guide"]);
+    // Copia propia en ~/.agents/skills (de cuando existía Codex) y una ajena en ~/.gemini/skills.
+    let own = e.home().join(".agents/skills/banco-de-skills");
+    copy_dir(&e.home().join(".claude/skills/banco-de-skills"), &own);
+    let foreign = e.home().join(".gemini/skills/banco-de-skills");
+    fs::create_dir_all(&foreign).unwrap();
+    fs::write(foreign.join("SKILL.md"), "---\nname: banco-de-skills\ndescription: otra\n---\nx\n").unwrap();
+
+    let o = e.json(&a, &["agents", "install-guide"]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert!(!own.exists(), "la copia heredada propia se borra");
+    assert!(foreign.join("SKILL.md").is_file(), "la ajena no se toca");
+    assert!(o.json["data"].as_array().unwrap().iter().any(|r| r["action"] == "removed_legacy"));
+}
+
+fn copy_dir(src: &Path, dst: &Path) {
+    for entry in fs::read_dir(src).unwrap().flatten() {
+        let to = dst.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_dir(&entry.path(), &to);
+        } else {
+            fs::create_dir_all(dst).unwrap();
+            fs::copy(entry.path(), to).unwrap();
+        }
+    }
+}
+
+#[test]
+fn connect_y_actividad() {
+    let e = Env::new();
+    fs::create_dir_all(e.home().join(".claude")).unwrap();
+    let a = e.project("a");
+    let state = e.home().join(".local/state/skillbank/agents.json");
+
+    // Sin identidad: error de uso y nada registrado.
+    let o = e.json(&a, &["connect"]);
+    assert_eq!(o.code, 2);
+    write_skill(&a.join(".claude/skills"), "demo", "");
+    e.json(&a, &["push", "demo"]);
+    assert!(!state.exists(), "un uso sin agente identificado no se registra");
+
+    // Saludo con --agent.
+    let o = e.json(&a, &["connect", "--agent", "claude"]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert_eq!(o.json["data"]["first_time"], true);
+    assert_eq!(o.json["data"]["guide"], "missing");
+    assert!(o.json["warnings"].as_array().unwrap().iter().any(|w| w["code"] == "GUIDE_NOT_CURRENT"));
+
+    // Uso detectado por el entorno (Cursor) en un comando sin --agent.
+    let mut c = e.cmd(&a);
+    c.env("CURSOR_AGENT", "1");
+    let o = e.run_with(c, &["list", "--json"]);
+    assert_eq!(o.code, 0);
+    // Uso con --agent en un comando cualquiera.
+    e.json(&a, &["search", "demo", "--agent", "antigravity"]);
+    // Claude Code por CLAUDECODE=1 en un pull.
+    let mut c = e.cmd(&e.project("b"));
+    c.env("CLAUDECODE", "1");
+    e.run_with(c, &["pull", "demo", "--json"]);
+
+    let log: Value = serde_json::from_str(&fs::read_to_string(&state).unwrap()).unwrap();
+    assert!(log["agents"]["claude"]["connected_at"].is_string());
+    assert_eq!(log["agents"]["claude"]["last_command"], "pull");
+    assert_eq!(log["agents"]["claude"]["last_skill"], "demo");
+    assert_eq!(log["agents"]["cursor"]["last_command"], "list");
+    assert!(log["agents"]["cursor"]["connected_at"].is_null());
+    assert_eq!(log["agents"]["antigravity"]["last_command"], "search");
+    assert_eq!(log["recent"].as_array().unwrap().len(), 4);
 }

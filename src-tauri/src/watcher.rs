@@ -1,5 +1,6 @@
-//! Vigila el banco y el registro de instalaciones: cuando un agente sube o trae una skill con
-//! el CLI, la interfaz se entera (eventos `bank-changed` e `installs-changed`) y se refresca sola.
+//! Vigila el banco, el registro de instalaciones y la actividad de los agentes: cuando un agente
+//! usa el CLI, la interfaz se entera (`bank-changed`, `installs-changed`, `agents-changed`) y se
+//! refresca sola.
 
 use crate::AppState;
 use notify_debouncer_full::notify::RecursiveMode;
@@ -16,12 +17,14 @@ pub fn start(app: AppHandle) {
     let _ = std::fs::create_dir_all(&state_dir);
     let internal = bank_root.join(".skillbank");
     let registry = state_dir.join("installs.json");
+    let agents_file = state_dir.join("agents.json");
     let handle = app.clone();
 
     let debouncer = new_debouncer(Duration::from_millis(300), None, move |res: DebounceEventResult| {
         let Ok(events) = res else { return };
         let mut bank = false;
         let mut installs = false;
+        let mut agents = false;
         for ev in &events {
             for p in &ev.paths {
                 if p.starts_with(&internal) {
@@ -32,6 +35,9 @@ pub fn start(app: AppHandle) {
                 }
                 if *p == registry {
                     installs = true;
+                }
+                if *p == agents_file {
+                    agents = true;
                 }
             }
         }
@@ -46,6 +52,12 @@ pub fn start(app: AppHandle) {
             let _ = handle.emit("installs-changed", ());
             if debug {
                 eprintln!("[skillbank] evento: installs-changed");
+            }
+        }
+        if agents {
+            let _ = handle.emit("agents-changed", ());
+            if debug {
+                eprintln!("[skillbank] evento: agents-changed");
             }
         }
     });

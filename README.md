@@ -1,6 +1,6 @@
 # Banco de Skills
 
-Tu banco personal de **Agent Skills**. Creas una skill trabajando con Claude Code, Codex,
+Tu banco personal de **Agent Skills**. Creas una skill trabajando con Claude Code,
 Cursor o Antigravity, le dices al agente *"sube esta skill a mi banco"*, y en cualquier otro
 proyecto le dices *"trae la skill X de mi banco"*. Funciona con el estándar abierto
 [Agent Skills](https://agentskills.io/specification).
@@ -26,8 +26,8 @@ scripts/install-desktop-entry.sh      # compila e instala; --uninstall la quita
 Requiere las librerías de Tauri: `sudo apt install libwebkit2gtk-4.1-dev build-essential
 curl wget file pkg-config libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev`.
 
-La **skill guía** `banco-de-skills` se instala en `~/.claude/skills/` y `~/.agents/skills/`
-(y `~/.gemini/config/skills/` si usas Antigravity). Es lo que hace que tus agentes entiendan
+La **skill guía** `banco-de-skills` se instala en `~/.claude/skills/` (la leen Claude Code y
+Cursor) y en `~/.gemini/config/skills/` si usas Antigravity. Es lo que hace que tus agentes entiendan
 "sube/trae una skill de mi banco" en lenguaje natural.
 
 ## Uso rápido
@@ -35,7 +35,8 @@ La **skill guía** `banco-de-skills` se instala en `~/.claude/skills/` y `~/.age
 ```bash
 skillbank push .claude/skills/mi-skill --tags pdf     # subir (o por nombre: skillbank push mi-skill)
 skillbank pull mi-skill                               # traer al proyecto actual
-skillbank pull mi-skill --agent codex --global        # traer a la carpeta global de Codex
+skillbank pull mi-skill --agent antigravity --global  # traer a la carpeta global de Antigravity
+skillbank connect --agent claude                      # conectar un agente (la app lo muestra en verde)
 skillbank list                                        # ver el banco
 skillbank search "facturas pdf"                       # buscar
 skillbank show mi-skill --body                        # ver una skill
@@ -72,6 +73,15 @@ Todos los comandos aceptan `--json` (un único objeto con `ok`, `code`, `exit_co
 - Si eliges varios agentes, no se copia dos veces: Cursor también lee `.claude/skills` y
   `.agents/skills`, así que `--agent claude --agent cursor` usa solo `.claude/skills`.
 
+## Agentes conectados
+
+La conexión es por CLI (no MCP), así que es la app de Banco de Skills la que muestra qué agentes
+están conectados (página **Agentes** e íconos en la barra lateral):
+
+1. Instala la guía (botón en la app o `skillbank agents install-guide`).
+2. Dile a tu agente: **"conéctate con mi banco de skills"**. Ejecutará `skillbank connect` y su
+   ícono se pondrá en verde al instante. Cada push o pull que haga actualiza su actividad.
+
 ## Dónde vive todo
 
 | Qué | Ruta |
@@ -85,8 +95,7 @@ Todos los comandos aceptan `--json` (un único objeto con `ok`, `code`, `exit_co
 | Agente | Proyecto | Global |
 |---|---|---|
 | Claude Code | `.claude/skills` | `~/.claude/skills` |
-| Codex | `.agents/skills` | `~/.agents/skills` |
-| Cursor | `.cursor/skills` | `~/.cursor/skills` |
+| Cursor | `.cursor/skills` (también lee `.claude/skills` y `.agents/skills`) | `~/.cursor/skills` (también lee `~/.claude/skills`) |
 | Antigravity | `.agents/skills` | `~/.gemini/config/skills` |
 
 ## Desarrollo

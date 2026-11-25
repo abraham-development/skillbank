@@ -57,6 +57,13 @@ fn main() {
             commands::skill_read_file,
             commands::installs_list,
             commands::open_path,
+            commands::agents_status,
+            commands::activity_list,
+            commands::agent_install_guide,
+            commands::agent_disconnect,
+            commands::install_preview,
+            commands::install_apply,
+            commands::recent_projects,
         ])
         .run(tauri::generate_context!())
         .expect("error al iniciar Banco de Skills");

@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Check, FileText, FolderOpen, Terminal } from "lucide-react";
+import { ArrowLeft, Check, Download, FileText, FolderOpen, Terminal } from "lucide-react";
 import { api, prettyPath, type SkillDetail } from "../lib/api";
 import { AGENT_NAMES, fileSize, fullDate, plural, relativeTime, shortHash } from "../lib/format";
 import { Badge, Button, DiagnosticsList, ErrorBox, Spinner, StatusBadge, TagChip } from "../components/ui";
+import InstallDialog from "../components/InstallDialog";
 
 type Tab = "vista" | "archivos" | "instalaciones" | "validacion";
 
@@ -88,7 +89,7 @@ function InstallsTab({ d, home }: { d: SkillDetail; home?: string }) {
       <div className="text-sm text-zinc-500">
         <p>Esta skill todavía no está instalada en ningún proyecto registrado.</p>
         <p className="mt-2">
-          Pídele a tu agente “trae la skill <strong>{d.name}</strong> de mi banco”, o usa{" "}
+          Usa el botón <strong>Instalar…</strong>, pídele a tu agente “trae la skill <strong>{d.name}</strong> de mi banco”, o usa{" "}
           <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">{d.pull_command}</code>.
         </p>
       </div>
@@ -142,6 +143,7 @@ export default function SkillPage() {
   const [tab, setTab] = useState<Tab>("vista");
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const detail = useQuery({ queryKey: ["skill", name], queryFn: () => api.skillDetail(name) });
   const app = useQuery({ queryKey: ["app"], queryFn: api.appInfo });
 
@@ -229,6 +231,9 @@ export default function SkillPage() {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
+            <Button variant="primary" onClick={() => setInstalling(true)} title="Instalar en un proyecto o a nivel global">
+              <Download className="size-4" /> Instalar…
+            </Button>
             <Button onClick={copyPull} title="Copia el comando para traerla a un proyecto">
               {copied ? <Check className="size-4 text-emerald-500" /> : <Terminal className="size-4" />}
               {copied ? "¡Copiado!" : "Copiar comando pull"}
@@ -277,6 +282,7 @@ export default function SkillPage() {
           </div>
         )}
       </div>
+      {installing && <InstallDialog name={d.name} home={app.data?.home} onClose={() => setInstalling(false)} />}
     </div>
   );
 }

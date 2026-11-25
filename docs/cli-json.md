@@ -34,6 +34,24 @@ En error, `ok` es `false` y se añade `hint` (qué hacer). `data` trae el detall
 
 ## `data` por comando
 
+### Opción global `--agent`
+
+`--agent claude|cursor|antigravity` vale en cualquier comando. Identifica al agente que usa el CLI
+(la app lo muestra como conectado y registra su actividad en `~/.local/state/skillbank/agents.json`)
+y en `pull`, `validate` y `agents install-guide` también indica el destino (repetible). Sin
+`--agent`, se reconoce Claude Code por `CLAUDECODE=1` y Cursor por `CURSOR_AGENT`.
+`--agent codex` da `USAGE`: Codex ya no está soportado.
+
+### connect
+
+```json
+{ "agent": "claude", "name": "Claude Code", "connected_at": "…", "first_time": true,
+  "guide": "current|outdated|missing|foreign", "bank": "/…/bank" }
+```
+
+Sin agente identificado sale con `USAGE` (exit 2). Si la guía no está al día, añade el aviso
+`GUIDE_NOT_CURRENT`.
+
 ### push
 
 ```json

@@ -168,3 +168,181 @@ pub async fn open_path(state: State<'_, AppState>, path: String) -> CmdResult<()
     })
     .await
 }
+
+// ───────────── agentes conectados ─────────────
+
+use skillbank_core::activity::{self, ActivityEvent, AgentStatus};
+use skillbank_core::agents::{AgentId, AgentRequest, Scope};
+use skillbank_core::install::{PullOptions, PullOutcome};
+
+fn parse_agent(agent: &str) -> CmdResult<AgentId> {
+    agent.parse::<AgentId>().map_err(|e| CoreError::new(ErrorKind::Usage, e))
+}
+
+#[tauri::command]
+pub async fn agents_status(state: State<'_, AppState>) -> CmdResult<Vec<AgentStatus>> {
+    run(state, |ctx| Ok(activity::all_status(ctx))).await
+}
+
+#[tauri::command]
+pub async fn activity_list(state: State<'_, AppState>, limit: Option<usize>) -> CmdResult<Vec<ActivityEvent>> {
+    run(state, move |ctx| {
+        let mut ev = activity::ActivityLog::load(&activity::log_path(&ctx.paths)).events();
+        ev.truncate(limit.unwrap_or(50));
+        Ok(ev)
+    })
+    .await
+}
+
+/// Ruta del CLI que se escribe en la guía como alternativa si no está en el PATH.
+fn cli_path() -> String {
+    skillbank_core::doctor::which_all("skillbank")
+        .first()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "skillbank".into())
+}
+
+#[tauri::command]
+pub async fn agent_install_guide(state: State<'_, AppState>, agent: String) -> CmdResult<Vec<guide::GuideResult>> {
+    run(state, move |ctx| guide::install(ctx, &[parse_agent(&agent)?], false, &cli_path())).await
+}
+
+#[derive(Serialize)]
+pub struct DisconnectResult {
+    removed: Vec<guide::GuideResult>,
+    forgotten: bool,
+    /// Agentes que siguen leyendo la guía desde una carpeta compartida (p. ej. Cursor lee la de Claude Code).
+    still_shared_with: Vec<String>,
+}
+
+/// Quita la guía del agente y olvida su conexión.
+#[tauri::command]
+pub async fn agent_disconnect(state: State<'_, AppState>, agent: String) -> CmdResult<DisconnectResult> {
+    run(state, move |ctx| {
+        let a = parse_agent(&agent)?;
+        let removed = guide::uninstall(ctx, &[a])?;
+        let forgotten = activity::forget(&ctx.paths, a)?;
+        let still = if guide::state_for_agent(ctx, a) == "missing" {
+            vec![]
+        } else {
+            AgentId::ALL
+                .into_iter()
+                .filter(|o| *o != a && guide::state_for_agent(ctx, *o) != "missing")
+                .map(|o| o.display().to_string())
+                .collect()
+        };
+        Ok(DisconnectResult { removed, forgotten, still_shared_with: still })
+    })
+    .await
+}
+
+// ───────────── instalar en global o proyecto ─────────────
+
+#[derive(Serialize)]
+pub struct InstallPreview {
+    #[serde(flatten)]
+    outcome: serde_json::Value,
+    /// Hay copias locales distintas: aplicar exigirá confirmar la sobrescritura.
+    conflicts: bool,
+    /// Agentes que verán la skill más de una vez (Cursor lee varias carpetas).
+    duplicated_for: Vec<String>,
+}
+
+fn pull_options(
+    scope: &str,
+    project: Option<String>,
+    agents: Vec<String>,
+    force: bool,
+    dry_run: bool,
+) -> CmdResult<PullOptions> {
+    let scope = match scope {
+        "global" => Scope::Global,
+        "project" => Scope::Project,
+        other => return Err(CoreError::new(ErrorKind::Usage, format!("Ámbito desconocido: {other}"))),
+    };
+    if scope == Scope::Project && project.as_deref().is_none_or(str::is_empty) {
+        return Err(CoreError::new(ErrorKind::Usage, "Elige la carpeta del proyecto."));
+    }
+    let list: Vec<AgentId> = agents.iter().map(|a| parse_agent(a)).collect::<CmdResult<_>>()?;
+    if list.is_empty() {
+        return Err(CoreError::new(ErrorKind::Usage, "Elige al menos un agente."));
+    }
+    let cwd = project.as_ref().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("/"));
+    Ok(PullOptions {
+        agents: AgentRequest::List(list),
+        scope,
+        project: project.map(PathBuf::from),
+        cwd,
+        force,
+        dry_run,
+        dedupe: true,
+    })
+}
+
+fn duplicated(outcome: &serde_json::Value) -> Vec<String> {
+    let dests = outcome.get("destinations").and_then(|d| d.as_array()).cloned().unwrap_or_default();
+    AgentId::ALL
+        .into_iter()
+        .filter(|a| {
+            dests
+                .iter()
+                .filter(|d| d.get("agents").and_then(|x| x.as_array()).is_some_and(|l| l.iter().any(|v| v == a.key())))
+                .count()
+                > 1
+        })
+        .map(|a| a.display().to_string())
+        .collect()
+}
+
+#[tauri::command]
+pub async fn install_preview(
+    state: State<'_, AppState>,
+    name: String,
+    scope: String,
+    project: Option<String>,
+    agents: Vec<String>,
+) -> CmdResult<InstallPreview> {
+    run(state, move |ctx| {
+        let opts = pull_options(&scope, project, agents, false, true)?;
+        match skillbank_core::install::pull(ctx, std::slice::from_ref(&name), &opts) {
+            Ok(outcome) => {
+                let outcome = serde_json::to_value(&outcome)?;
+                Ok(InstallPreview { duplicated_for: duplicated(&outcome), outcome, conflicts: false })
+            }
+            Err(e) if e.kind == ErrorKind::Conflict => {
+                let outcome = e.data.clone();
+                Ok(InstallPreview { duplicated_for: duplicated(&outcome), outcome, conflicts: true })
+            }
+            Err(e) => Err(e),
+        }
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn install_apply(
+    state: State<'_, AppState>,
+    name: String,
+    scope: String,
+    project: Option<String>,
+    agents: Vec<String>,
+    force: bool,
+) -> CmdResult<PullOutcome> {
+    run(state, move |ctx| {
+        let opts = pull_options(&scope, project, agents, force, false)?;
+        skillbank_core::install::pull(ctx, std::slice::from_ref(&name), &opts)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn recent_projects(state: State<'_, AppState>) -> CmdResult<Vec<String>> {
+    run(state, |ctx| {
+        Ok(skillbank_core::registry::Registry::load(&ctx.paths.registry_file())?
+            .recent_projects
+            .into_iter()
+            .filter(|p| Path::new(p).is_dir())
+            .collect())
+    })
+    .await
+}

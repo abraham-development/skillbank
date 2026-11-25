@@ -6,6 +6,7 @@ use std::path::PathBuf;
 const AFTER_HELP: &str = "\
 Ejemplos:
   skillbank push .claude/skills/mi-skill --json      Sube una skill al banco
+  skillbank connect --agent claude                   Conecta tu agente con el banco
   skillbank pull mi-skill --agent claude --json      La trae al proyecto actual
   skillbank search \"pdf\"                             Busca en el banco
   skillbank agents install-guide                     Enseña a tus agentes a usar el banco
@@ -40,12 +41,18 @@ pub struct Cli {
     /// Segundos de espera si el banco está ocupado.
     #[arg(long, global = true, default_value_t = 30, value_name = "SEG")]
     pub lock_timeout: u64,
+    /// Agente: claude, cursor o antigravity. Identifica quién usa el CLI (la app lo muestra
+    /// como conectado) y, en pull/validate/install-guide, es el destino (repetible).
+    #[arg(long, global = true, value_name = "AGENTE")]
+    pub agent: Vec<String>,
     #[command(subcommand)]
     pub command: Command,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Conecta el agente con el banco: la app de escritorio lo mostrará como conectado.
+    Connect,
     /// Sube una skill al banco (crea o actualiza).
     Push(PushArgs),
     /// Trae skills del banco a este proyecto o a la carpeta global de un agente.
@@ -115,9 +122,6 @@ pub enum Command {
 pub struct PushArgs {
     /// Carpeta de la skill, su SKILL.md o su nombre (se busca en las carpetas de los agentes).
     pub target: String,
-    /// Agente que hace la subida: claude, codex, cursor o antigravity.
-    #[arg(long, value_name = "AGENTE")]
-    pub agent: Option<String>,
     /// Etiquetas separadas por comas (reemplazan las actuales).
     #[arg(long, value_name = "A,B")]
     pub tags: Option<String>,
@@ -143,9 +147,6 @@ pub struct PullArgs {
     /// Nombre(s) de la(s) skill(s).
     #[arg(required = true)]
     pub names: Vec<String>,
-    /// Agente(s) destino (repetible): claude, codex, cursor, antigravity, all, detected.
-    #[arg(long, value_name = "AGENTE")]
-    pub agent: Vec<String>,
     /// Carpeta del proyecto (por defecto, el directorio actual).
     #[arg(long, value_name = "DIR", conflicts_with = "global")]
     pub project: Option<PathBuf>,
@@ -201,9 +202,6 @@ pub struct ValidateArgs {
     /// open (estándar), claude-ai (estricto) o claude-code.
     #[arg(long, default_value = "open")]
     pub profile: String,
-    /// Agente(s) destino: avisa de campos que ese agente ignora.
-    #[arg(long, value_name = "AGENTE")]
-    pub agent: Vec<String>,
     /// Los avisos también hacen fallar la validación.
     #[arg(long)]
     pub strict: bool,
@@ -229,10 +227,7 @@ pub enum AgentsCmd {
     },
     /// Instala (o quita) la skill guía `banco-de-skills` en los agentes.
     InstallGuide {
-        /// Agente(s): claude, codex, cursor, antigravity.
-        #[arg(long, value_name = "AGENTE", conflicts_with = "all")]
-        agent: Vec<String>,
-        /// Todos los agentes, estén instalados o no.
+        /// Todos los agentes, estén instalados o no (si no, usa --agent o los instalados).
         #[arg(long)]
         all: bool,
         /// Reemplaza una skill ajena con el mismo nombre.

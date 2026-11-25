@@ -53,11 +53,8 @@ fn trunc(s: &str, n: usize) -> String {
 
 // ───────────── push ─────────────
 
-pub fn push(ctx: &Context, a: &PushArgs) -> Result<Reply> {
-    let agent = match &a.agent {
-        Some(s) => Some(s.parse::<AgentId>().map_err(CoreError::usage)?),
-        None => agent_from_env(),
-    };
+pub fn push(ctx: &Context, a: &PushArgs, agents: &[String]) -> Result<Reply> {
+    let agent = identity(agents)?;
     let opts = PushOptions {
         force: a.force,
         tags: a.tags.as_ref().map(|t| vec![t.clone()]),
@@ -92,9 +89,9 @@ pub fn push(ctx: &Context, a: &PushArgs) -> Result<Reply> {
 
 // ───────────── pull ─────────────
 
-pub fn pull(ctx: &Context, a: &PullArgs) -> Result<Reply> {
+pub fn pull(ctx: &Context, a: &PullArgs, agents: &[String]) -> Result<Reply> {
     let opts = PullOptions {
-        agents: parse_agents(&a.agent)?,
+        agents: parse_agents(agents)?,
         scope: if a.global { Scope::Global } else { Scope::Project },
         project: a.project.clone(),
         cwd: cwd(),
@@ -252,9 +249,9 @@ pub fn path(ctx: &Context, name: &str) -> Result<Reply> {
 
 // ───────────── validate ─────────────
 
-pub fn validate(ctx: &Context, a: &ValidateArgs) -> Result<Reply> {
+pub fn validate(ctx: &Context, a: &ValidateArgs, agents: &[String]) -> Result<Reply> {
     let profile: Profile = a.profile.parse().map_err(CoreError::usage)?;
-    let targets = match parse_agents(&a.agent)? {
+    let targets = match parse_agents(agents)? {
         AgentRequest::List(l) => l,
         AgentRequest::All => AgentId::ALL.to_vec(),
         _ => vec![],
@@ -316,7 +313,7 @@ pub fn remove(ctx: &Context, a: &RemoveArgs) -> Result<Reply> {
 
 // ───────────── agents ─────────────
 
-pub fn agents(ctx: &Context, cmd: &AgentsCmd) -> Result<Reply> {
+pub fn agents(ctx: &Context, cmd: &AgentsCmd, agent_args: &[String]) -> Result<Reply> {
     match cmd {
         AgentsCmd::List => {
             let mut rows = Vec::new();
@@ -365,11 +362,11 @@ pub fn agents(ctx: &Context, cmd: &AgentsCmd) -> Result<Reply> {
             )
             .human(human))
         }
-        AgentsCmd::InstallGuide { agent, all, force, uninstall } => {
+        AgentsCmd::InstallGuide { all, force, uninstall } => {
             let agents: Vec<AgentId> = if *all {
                 AgentId::ALL.to_vec()
-            } else if !agent.is_empty() {
-                match parse_agents(agent)? {
+            } else if !agent_args.is_empty() {
+                match parse_agents(agent_args)? {
                     AgentRequest::List(l) => l,
                     AgentRequest::All => AgentId::ALL.to_vec(),
                     _ => guide::present_agents(ctx),
@@ -388,9 +385,11 @@ pub fn agents(ctx: &Context, cmd: &AgentsCmd) -> Result<Reply> {
                     "updated" => "actualizada",
                     "unchanged" => "ya estaba al día",
                     "removed" => "quitada",
+                    "removed_legacy" => "copia antigua quitada",
                     _ => "no estaba",
                 };
-                human.push_str(&format!("  • {}  [{act}] ({})\n", ps(ctx, &r.dir), agents_label(&r.agents)));
+                let who = if r.agents.is_empty() { String::new() } else { format!(" ({})", agents_label(&r.agents)) };
+                human.push_str(&format!("  • {}  [{act}]{who}\n", ps(ctx, &r.dir)));
             }
             let msg = if *uninstall {
                 "Skill guía quitada.".to_string()
@@ -714,4 +713,60 @@ pub fn doctor(ctx: &Context, fix: bool) -> Result<Reply> {
         }
     };
     Ok(Reply::new(msg, &r).human(render_checks(&checks)))
+}
+
+// ───────────── identidad y connect ─────────────
+
+/// Agente que está usando el CLI: el único `--agent` dado, o el detectado por el entorno.
+pub fn identity(agents: &[String]) -> Result<Option<AgentId>> {
+    match parse_agents(agents)? {
+        AgentRequest::List(l) if l.len() == 1 => Ok(Some(l[0])),
+        _ => Ok(agent_from_env()),
+    }
+}
+
+pub fn connect(ctx: &Context, agents: &[String]) -> Result<Reply> {
+    let Some(agent) = identity(agents)? else {
+        return Err(CoreError::usage("No sé qué agente eres. Repite con --agent claude, cursor o antigravity."));
+    };
+    let cwd = cwd();
+    let first_time = skillbank_core::activity::record(
+        &ctx.paths,
+        agent,
+        &skillbank_core::activity::Usage {
+            command: "connect".into(),
+            project: Some(project_root(&cwd).display().to_string()),
+            ok: true,
+            connect: true,
+            ..Default::default()
+        },
+    )
+    .map_err(|e| e.context("no se pudo guardar la conexión"))?;
+    let st = skillbank_core::activity::status(ctx, agent);
+    let mut human = format!("  Banco: {}\n", p(ctx, &ctx.bank.root));
+    let mut warnings = vec![];
+    if st.guide != "current" {
+        let msg = format!(
+            "La skill guía no está al día en {} (estado: {}). Instálala con `skillbank agents install-guide --agent {}`.",
+            agent.display(),
+            st.guide,
+            agent.key()
+        );
+        human.push_str(&format!("  ⚠ {msg}\n"));
+        warnings.push(json!({"code": "GUIDE_NOT_CURRENT", "message": msg}));
+    }
+    let msg = if first_time {
+        format!("✓ {} conectado con Banco de Skills por primera vez.", agent.display())
+    } else {
+        format!("✓ {} conectado con Banco de Skills.", agent.display())
+    };
+    Ok(Reply::new(
+        msg,
+        json!({
+            "agent": agent, "name": agent.display(), "connected_at": st.activity.connected_at,
+            "first_time": first_time, "guide": st.guide, "bank": ctx.bank.root,
+        }),
+    )
+    .human(human)
+    .warnings(warnings))
 }

@@ -1,10 +1,12 @@
 // Barra lateral: filtros de la biblioteca, etiquetas y estado de la instalación.
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
-import { AlertTriangle, CheckCircle2, Library, RefreshCcw, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Library, PlugZap, RefreshCcw, Sparkles, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { api, prettyPath } from "../lib/api";
 import { useLibraryData } from "../lib/useLibraryData";
+import { AgentAvatar, STATE_LABEL } from "./AgentAvatar";
+import { AGENT_NAMES } from "../lib/format";
 
 function NavItem({
   icon,
@@ -45,6 +47,9 @@ export default function Sidebar() {
   const activeTag = onLibrary ? params.get("tag") : null;
   const { skills, tags, outdatedBySkill } = useLibraryData();
   const app = useQuery({ queryKey: ["app"], queryFn: api.appInfo });
+  const agents = useQuery({ queryKey: ["agents"], queryFn: api.agentsStatus });
+  const onAgents = location.pathname === "/agentes";
+  const connectedCount = (agents.data ?? []).filter((a) => a.state === "connected").length;
 
   const go = (next: Record<string, string>) => {
     const p = new URLSearchParams();
@@ -63,7 +68,6 @@ export default function Sidebar() {
     desactualizadas: Object.keys(outdatedBySkill).length,
   };
 
-  const guideIssues = (app.data?.guide ?? []).filter((g) => g.present && g.state !== "current");
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/60">
@@ -81,6 +85,8 @@ export default function Sidebar() {
         <NavItem icon={<AlertTriangle className="size-4" />} label="Con avisos" count={counts.avisos} active={filter === "avisos"} onClick={() => go({ filtro: "avisos" })} />
         <NavItem icon={<XCircle className="size-4" />} label="Inválidas" count={counts.invalidas} active={filter === "invalidas"} onClick={() => go({ filtro: "invalidas" })} />
         <NavItem icon={<Sparkles className="size-4" />} label="Solo Claude Code" count={counts.claude} active={filter === "claude"} onClick={() => go({ filtro: "claude" })} />
+        <div className="my-2 border-t border-zinc-200 dark:border-zinc-800" />
+        <NavItem icon={<PlugZap className="size-4" />} label="Agentes" count={connectedCount} active={onAgents} onClick={() => navigate("/agentes")} />
       </nav>
 
       <div className="mt-6 px-4 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">Etiquetas</div>
@@ -120,15 +126,27 @@ export default function Sidebar() {
                 </>
               )}
             </div>
-            {guideIssues.length > 0 ? (
-              <div className="flex items-center gap-1.5" title="Ejecuta: skillbank agents install-guide">
-                <AlertTriangle className="size-3.5 text-amber-500" /> Guía pendiente en {guideIssues.map((g) => g.name).join(", ")}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Agentes conectados
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => navigate("/agentes")}
+              className="flex w-full items-center gap-2 rounded-lg py-1 text-left hover:text-brand-600"
+              title="Ver la conexión de tus agentes"
+            >
+              <span className="flex gap-1.5">
+                {(agents.data ?? []).map((a) => (
+                  <AgentAvatar
+                    key={a.agent}
+                    agent={a.agent}
+                    state={a.state}
+                    size="sm"
+                    title={`${AGENT_NAMES[a.agent]}: ${STATE_LABEL[a.state]}`}
+                  />
+                ))}
+              </span>
+              <span className="flex-1 truncate">
+                {connectedCount > 0 ? `${connectedCount} conectado${connectedCount > 1 ? "s" : ""}` : "Conectar agentes"}
+              </span>
+            </button>
           </>
         )}
       </div>

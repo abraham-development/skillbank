@@ -2,7 +2,7 @@
 
 ## Contexto
 
-El usuario crea Agent Skills (carpetas con `SKILL.md`) mientras trabaja con agentes de IA (Claude Code, Codex, Cursor, Antigravity), y hoy se quedan atrapadas en cada proyecto. Quiere un **banco personal** en su laptop (Ubuntu 26.04) donde:
+El usuario crea Agent Skills (carpetas con `SKILL.md`) mientras trabaja con agentes de IA (Claude Code, Cursor, Antigravity), y hoy se quedan atrapadas en cada proyecto. Quiere un **banco personal** en su laptop (Ubuntu 26.04) donde:
 - un agente, con lenguaje natural ("lleva esta skill a mi banco"), la suba ejecutando un CLI;
 - en otro proyecto, otro agente la traiga ("trae la skill X del banco");
 - desde una app de escritorio pueda ver, buscar, crear y editar skills a mano.
@@ -17,7 +17,7 @@ Carpeta del proyecto: `/home/abraham2/Proyectos/Banco de Skills` (vacía, sin gi
 | CLI | binario `skillbank`; comparte el crate núcleo con la app (la app no llama al CLI) |
 | Skill que ya existe al subir | Sobrescribir con confirmación, sin historial. CLI: exit 5 `CONFLICT` con resumen de diferencias; solo con `--force` sobrescribe. Red de seguridad: papelera local 7 días + papelera de Drive |
 | Traer a un proyecto | Copia independiente (nunca symlinks; nunca escribir *a través* de un symlink) |
-| Agentes | Claude Code, Codex, Cursor, Antigravity (rutas en config, editables) |
+| Agentes | Claude Code, Cursor y Antigravity (rutas en config, editables). Codex se quitó (nov. 2026) |
 | Conexión con agentes | CLI + skill guía `banco-de-skills` instalada en la carpeta global de cada agente. Sin MCP en v1 |
 | Funciones v1 | Etiquetas + búsqueda; editor con vista previa y validación en vivo; importar/exportar .zip; registro de instalaciones con detección de copias desactualizadas |
 | Respaldo | Google Drive con `rclone bisync` (≥ 1.66, NO el de apt que es 1.60) |
@@ -72,9 +72,8 @@ Banco de Skills/
 | Agente | Proyecto | Global | También lee |
 |---|---|---|---|
 | Claude Code | `.claude/skills` | `~/.claude/skills` (nunca escribir en `synced/`) | — |
-| Codex | `.agents/skills` | `~/.agents/skills` | `~/.codex/skills` (legado) |
 | Cursor | `.cursor/skills` | `~/.cursor/skills` | `.agents`, `.claude`, `.codex` (proyecto y global) |
-| Antigravity | `.agents/skills` | `~/.gemini/config/skills` | `.agent/skills`, `~/.gemini/antigravity/skills` |
+| Antigravity | `.agents/skills` | `~/.gemini/config/skills` | `.agent/skills`, `~/.gemini/antigravity/skills`, `~/.gemini/skills` |
 
 - Elección de agente: `--agent X` (repetible, `all`, `detected`) → variable de entorno (`CLAUDECODE=1`) → marcadores del proyecto → `default_agents`.
 - **Deduplicación**: no copiar a una carpeta si los agentes que la necesitan ya leen otra del plan (p. ej. {claude, cursor} → solo `.claude/skills`), para que Cursor no vea la skill dos veces. Raíz de proyecto = `.git` más cercano o cwd.
@@ -177,7 +176,6 @@ Tauri: comandos `async` con `spawn_blocking` que llaman al núcleo. Capacidades 
 *Listo cuando*:
 - hay ≥ 45 casos de validador y pruebas de todos los códigos de salida;
 - **prueba real con Claude Code**: en el proyecto A, "sube la skill X" → aparece en `list`; editarla y volver a subirla → exit 5 → Claude pregunta, y solo tras un "sí" usa `--force`; en el proyecto B, "trae la skill X" → `.claude/skills/X` funciona en la misma sesión;
-- Codex trae la skill a `.agents/skills`.
 
 **Fase 1b — Resto del CLI**: `installed`, `outdated`, `scan`, `tag`, `rename`, `new`, `import`/`export`, `doctor`, `completions`. *Listo cuando*:
 - hay pruebas de la matriz de estados y de zip-slip / zip bomb;
@@ -222,8 +220,16 @@ Si la ventana sale en blanco: `WEBKIT_DISABLE_DMABUF_RENDERER=1`.
   - hash y copia; deduplicación de agentes; estados del registro; zip;
   - CLI con assert_cmd en directorios temporales (`HOME` y `SKILLBANK_*`): push → pull, conflicto → `--force`, destino symlink, lock ocupado → 6, registro sin permisos → aviso.
 - Checklist manual en `docs/e2e-checklist.md`:
-  - Claude Code, Codex y Cursor (sin duplicados en el selector);
+  - Claude Code, Cursor y Antigravity;
   - zip a claude.ai;
   - GUI + CLI a la vez;
   - sincronización con Drive (primera vez, conflicto, sin conexión);
   - instalar y quitar el .deb.
+
+## Cambios posteriores
+
+- **Nov. 2026 — agentes conectados y quitar Codex.**
+  - Solo se soportan Claude Code, Cursor y Antigravity (rutas verificadas en su documentación oficial).
+  - `skillbank connect` y el registro de actividad (`agents.json`) permiten a la app mostrar qué
+    agentes están conectados.
+  - La app tiene página Agentes y diálogo "Instalar…" (global o proyecto). La guía pasa a v3.

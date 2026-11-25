@@ -5,12 +5,12 @@ Marca cada punto al probarlo con agentes reales.
 ## Fase 1a — CLI con agentes
 
 - [ ] `scripts/install-cli.sh` instala `~/.local/bin/skillbank` y la guía en los agentes detectados.
-- [ ] `skillbank agents list` muestra la guía como `current` en Claude Code, Codex y Cursor.
+- [ ] `skillbank agents list` muestra la guía como `current` en Claude Code y Cursor (y Antigravity si está instalado).
+- [ ] Decirle al agente "conéctate con mi banco de skills" → la app lo pone en verde sin recargar.
 - [ ] **Claude Code, proyecto A:** "sube la skill X a mi banco" → ejecuta `skillbank push … --json` y X aparece en `skillbank list`.
 - [ ] Editar X en A y pedir de nuevo "súbela" → exit 5 → Claude resume los cambios y **pregunta**; solo tras "sí" usa `--force`.
 - [ ] **Claude Code, proyecto B:** "trae la skill X de mi banco" → aparece `.claude/skills/X` y se puede usar en la misma sesión.
 - [ ] Editar X en B y pedir "tráela otra vez" → conflicto `modified`; Claude ofrece subir primero los cambios.
-- [ ] **Codex:** "trae la skill X" → `.agents/skills/X`. Si el sandbox bloquea `~/.local`, pide aprobación.
 - [ ] **Cursor:** "trae la skill X" → aparece una sola vez en el selector de skills.
 - [ ] **Antigravity** (cuando esté instalado): `skillbank agents install-guide --agent antigravity` y repetir.
 

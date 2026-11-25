@@ -17,6 +17,10 @@ export function useBankEvents() {
         qc.invalidateQueries({ queryKey: ["installs"] });
         qc.invalidateQueries({ queryKey: ["skill"] });
       }),
+      listen("agents-changed", () => {
+        qc.invalidateQueries({ queryKey: ["agents"] });
+        qc.invalidateQueries({ queryKey: ["activity"] });
+      }),
     ];
     return () => {
       unlisteners.forEach((p) => p.then((un) => un()));

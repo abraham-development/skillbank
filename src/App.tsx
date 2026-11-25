@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import Sidebar from "./components/Sidebar";
 import LibraryPage from "./pages/LibraryPage";
 import SkillPage from "./pages/SkillPage";
+import AgentsPage from "./pages/AgentsPage";
 import { useBankEvents } from "./lib/useBankEvents";
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LibraryPage />} />
           <Route path="/skill/:name" element={<SkillPage />} />
+          <Route path="/agentes" element={<AgentsPage />} />
         </Routes>
       </main>
     </div>

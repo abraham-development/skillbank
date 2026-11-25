@@ -32,7 +32,29 @@ export function plural(n: number, one: string, many: string): string {
 
 export const AGENT_NAMES: Record<string, string> = {
   claude: "Claude Code",
-  codex: "Codex",
   cursor: "Cursor",
   antigravity: "Antigravity",
+};
+
+/** Verbo en pasado para el historial ("Claude Code subió pdf-tools"). */
+export const COMMAND_VERBS: Record<string, string> = {
+  connect: "se conectó",
+  push: "subió",
+  pull: "trajo",
+  list: "listó el banco",
+  search: "buscó en el banco",
+  show: "consultó",
+  path: "consultó la ruta de",
+  validate: "validó",
+  remove: "eliminó",
+  tag: "etiquetó",
+  rename: "renombró",
+  new: "creó",
+  export: "exportó",
+  import: "importó",
+  installed: "consultó las instalaciones",
+  outdated: "revisó actualizaciones",
+  scan: "escaneó sus skills",
+  doctor: "ejecutó el diagnóstico",
+  agents: "revisó los agentes",
 };

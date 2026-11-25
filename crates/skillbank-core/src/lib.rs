@@ -4,6 +4,7 @@
 // ningún camino caliente, así que su tamaño no importa.
 #![allow(clippy::result_large_err)]
 
+pub mod activity;
 pub mod agents;
 pub mod archive;
 pub mod bank;

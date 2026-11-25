@@ -1,4 +1,4 @@
-//! Agentes destino (Claude Code, Codex, Cursor, Antigravity): detección y plan de
+//! Agentes destino (Claude Code, Cursor, Antigravity): detección y plan de
 //! carpetas de instalación sin duplicados.
 
 use crate::config::{AgentPaths, Config};
@@ -10,18 +10,16 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum AgentId {
     Claude,
-    Codex,
     Cursor,
     Antigravity,
 }
 
 impl AgentId {
-    pub const ALL: [AgentId; 4] = [AgentId::Claude, AgentId::Codex, AgentId::Cursor, AgentId::Antigravity];
+    pub const ALL: [AgentId; 3] = [AgentId::Claude, AgentId::Cursor, AgentId::Antigravity];
 
     pub fn key(self) -> &'static str {
         match self {
             AgentId::Claude => "claude",
-            AgentId::Codex => "codex",
             AgentId::Cursor => "cursor",
             AgentId::Antigravity => "antigravity",
         }
@@ -30,7 +28,6 @@ impl AgentId {
     pub fn display(self) -> &'static str {
         match self {
             AgentId::Claude => "Claude Code",
-            AgentId::Codex => "Codex",
             AgentId::Cursor => "Cursor",
             AgentId::Antigravity => "Antigravity",
         }
@@ -40,8 +37,8 @@ impl AgentId {
     pub fn understands_field(self, key: &str) -> bool {
         match self {
             AgentId::Claude => true,
-            AgentId::Cursor => matches!(key, "paths" | "disable-model-invocation"),
-            AgentId::Codex | AgentId::Antigravity => false,
+            AgentId::Cursor => matches!(key, "paths" | "disable-model-invocation" | "icon" | "color"),
+            AgentId::Antigravity => false,
         }
     }
 
@@ -49,9 +46,8 @@ impl AgentId {
     fn project_markers(self) -> &'static [&'static str] {
         match self {
             AgentId::Claude => &[".claude", "CLAUDE.md"],
-            AgentId::Codex => &[".codex", ".agents", "AGENTS.md"],
             AgentId::Cursor => &[".cursor", ".cursorrules"],
-            AgentId::Antigravity => &[".agent", ".gemini", "GEMINI.md"],
+            AgentId::Antigravity => &[".agents", ".agent", "GEMINI.md"],
         }
     }
 
@@ -59,7 +55,6 @@ impl AgentId {
     fn presence_dirs(self) -> &'static [&'static str] {
         match self {
             AgentId::Claude => &[".claude"],
-            AgentId::Codex => &[".codex"],
             AgentId::Cursor => &[".cursor"],
             AgentId::Antigravity => &[".gemini"],
         }
@@ -81,10 +76,10 @@ impl std::str::FromStr for AgentId {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim().to_lowercase().as_str() {
             "claude" | "claude-code" | "claudecode" => Ok(AgentId::Claude),
-            "codex" | "openai-codex" => Ok(AgentId::Codex),
+            "codex" | "openai-codex" => Err("Codex ya no está soportado; usa claude, cursor o antigravity".to_string()),
             "cursor" => Ok(AgentId::Cursor),
             "antigravity" | "gemini" | "google-antigravity" => Ok(AgentId::Antigravity),
-            other => Err(format!("agente desconocido '{other}' (usa claude, codex, cursor o antigravity)")),
+            other => Err(format!("agente desconocido '{other}' (usa claude, cursor o antigravity)")),
         }
     }
 }
@@ -141,8 +136,13 @@ pub fn detect_project_agents(project_root: &Path) -> Vec<AgentId> {
 
 /// Agente que está ejecutando el CLI, si se reconoce por variables de entorno.
 pub fn agent_from_env() -> Option<AgentId> {
+    // CLAUDECODE=1 lo pone Claude Code en sus comandos; CURSOR_AGENT lo documenta Cursor.
+    // Antigravity no tiene una variable documentada: depende de `--agent`.
     if std::env::var_os("CLAUDECODE").is_some_and(|v| v == "1") {
         return Some(AgentId::Claude);
+    }
+    if std::env::var_os("CURSOR_AGENT").is_some_and(|v| !v.is_empty()) {
+        return Some(AgentId::Cursor);
     }
     None
 }
@@ -311,11 +311,11 @@ mod tests {
     }
 
     #[test]
-    fn dedupe_codex_antigravity_cursor_una_carpeta() {
+    fn antigravity_y_cursor_una_carpeta() {
         let cfg = Config::default();
         let p = paths("/h");
         let plan = plan_destinations(
-            &[AgentId::Codex, AgentId::Antigravity, AgentId::Cursor],
+            &[AgentId::Antigravity, AgentId::Cursor],
             Scope::Project,
             Path::new("/p"),
             &cfg,
@@ -323,24 +323,33 @@ mod tests {
             true,
         );
         assert_eq!(dirs(&plan), vec!["/p/.agents/skills"]);
-        assert_eq!(plan[0].agents.len(), 3);
+        assert_eq!(plan[0].agents, vec![AgentId::Antigravity, AgentId::Cursor]);
     }
 
     #[test]
-    fn claude_y_codex_dos_carpetas() {
+    fn proyecto_los_tres_dos_carpetas() {
         let cfg = Config::default();
         let p = paths("/h");
-        let plan =
-            plan_destinations(&[AgentId::Claude, AgentId::Codex], Scope::Project, Path::new("/p"), &cfg, &p, true);
+        let plan = plan_destinations(&AgentId::ALL, Scope::Project, Path::new("/p"), &cfg, &p, true);
         assert_eq!(dirs(&plan), vec!["/p/.claude/skills", "/p/.agents/skills"]);
+        // Cursor lee las dos: se avisará del duplicado.
+        assert!(plan.iter().all(|d| d.agents.contains(&AgentId::Cursor)));
     }
 
     #[test]
-    fn global_todos_tres_carpetas() {
+    fn global_los_tres_dos_carpetas() {
         let cfg = Config::default();
         let p = paths("/h");
         let plan = plan_destinations(&AgentId::ALL, Scope::Global, Path::new("/p"), &cfg, &p, true);
-        assert_eq!(dirs(&plan), vec!["/h/.claude/skills", "/h/.agents/skills", "/h/.gemini/config/skills"]);
+        assert_eq!(dirs(&plan), vec!["/h/.claude/skills", "/h/.gemini/config/skills"]);
+        assert_eq!(plan[0].agents, vec![AgentId::Claude, AgentId::Cursor]);
+        assert_eq!(plan[1].agents, vec![AgentId::Antigravity]);
+    }
+
+    #[test]
+    fn codex_ya_no_se_acepta() {
+        let e = AgentRequest::parse(&["codex".into()]).unwrap_err();
+        assert!(e.contains("Codex ya no está soportado"));
     }
 
     #[test]

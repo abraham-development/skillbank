@@ -12,6 +12,7 @@ pub struct InstallRecord {
     pub id: String,
     pub skill: String,
     pub scope: Scope,
+    #[serde(deserialize_with = "known_agents")]
     pub agents: Vec<AgentId>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project_root: Option<String>,
@@ -22,6 +23,12 @@ pub struct InstallRecord {
     pub installed_at: DateTime<Utc>,
     /// pull | push | scan
     pub origin: String,
+}
+
+/// Lee la lista de agentes descartando los que ya no se soportan (p. ej. `codex`).
+fn known_agents<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Vec<AgentId>, D::Error> {
+    let raw: Vec<String> = Vec::deserialize(d)?;
+    Ok(raw.iter().filter_map(|a| a.parse().ok()).collect())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -137,6 +144,15 @@ impl Registry {
 #[cfg(test)]
 mod tests {
     use super::InstallStatus as S;
+
+    #[test]
+    fn registro_con_codex_no_se_pierde() {
+        let json = r#"{"schema":1,"installs":[{"id":"1","skill":"x","scope":"project","agents":["codex","claude"],
+            "path":"/p/.claude/skills/x","installed_hash":"h","installed_at":"2026-01-01T00:00:00Z","origin":"pull"}]}"#;
+        let r: super::Registry = serde_json::from_str(json).unwrap();
+        assert_eq!(r.installs.len(), 1);
+        assert_eq!(r.installs[0].agents, vec![crate::agents::AgentId::Claude]);
+    }
 
     #[test]
     fn matriz_de_estados() {

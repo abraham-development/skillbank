@@ -16,6 +16,7 @@ use std::time::Duration;
 
 fn command_name(c: &Command) -> &'static str {
     match c {
+        Command::Connect => "connect",
         Command::Push(_) => "push",
         Command::Pull(_) => "pull",
         Command::List(_) => "list",
@@ -79,13 +80,14 @@ fn main() {
     };
 
     let result = match &cli.command {
-        Command::Push(a) => cmd::push(&ctx, a),
-        Command::Pull(a) => cmd::pull(&ctx, a),
+        Command::Connect => cmd::connect(&ctx, &cli.agent),
+        Command::Push(a) => cmd::push(&ctx, a, &cli.agent),
+        Command::Pull(a) => cmd::pull(&ctx, a, &cli.agent),
         Command::List(a) => cmd::list(&ctx, a),
         Command::Search(a) => cmd::search_cmd(&ctx, a),
         Command::Show(a) => cmd::show(&ctx, a),
         Command::Path { name } => cmd::path(&ctx, name),
-        Command::Validate(a) => cmd::validate(&ctx, a),
+        Command::Validate(a) => cmd::validate(&ctx, a, &cli.agent),
         Command::Remove(a) => cmd::remove(&ctx, a),
         Command::Tag(a) => cmd::tag(&ctx, a),
         Command::Rename { old, new } => cmd::rename(&ctx, old, new),
@@ -96,13 +98,44 @@ fn main() {
         Command::Outdated(a) => cmd::outdated(&ctx, a),
         Command::Scan(a) => cmd::scan(&ctx, a),
         Command::Doctor { fix } => cmd::doctor(&ctx, *fix),
-        Command::Agents { cmd } => cmd::agents(&ctx, cmd),
+        Command::Agents { cmd } => cmd::agents(&ctx, cmd, &cli.agent),
         Command::Config { cmd } => cmd::config(&ctx, cmd),
         Command::Completions { .. } => unreachable!(),
     };
+    record_activity(&ctx, &cli, name, &result);
     let code = match result {
         Ok(r) => printer.ok(name, r),
         Err(e) => printer.err(name, &e),
     };
     std::process::exit(code);
+}
+
+/// Anota el uso del CLI por un agente identificado (`--agent` o entorno) para que la app de
+/// escritorio lo muestre como conectado. `connect` ya se anota a sí mismo. Nunca falla.
+fn record_activity(ctx: &Context, cli: &Cli, name: &str, result: &Result<output::Reply, CoreError>) {
+    if matches!(cli.command, Command::Connect | Command::Completions { .. } | Command::Config { .. }) {
+        return;
+    }
+    let Ok(Some(agent)) = cmd::identity(&cli.agent) else { return };
+    let skill = match result {
+        Ok(r) => r
+            .data
+            .get("name")
+            .or_else(|| r.data.get("items").and_then(|i| i.get(0)).and_then(|i| i.get("skill")))
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        Err(e) => e.data.get("name").and_then(|v| v.as_str()).map(str::to_string),
+    };
+    let project = std::env::current_dir().ok().map(|d| skillbank_core::paths::project_root(&d).display().to_string());
+    let _ = skillbank_core::activity::record(
+        &ctx.paths,
+        agent,
+        &skillbank_core::activity::Usage {
+            command: name.to_string(),
+            skill,
+            project,
+            ok: result.is_ok(),
+            connect: false,
+        },
+    );
 }

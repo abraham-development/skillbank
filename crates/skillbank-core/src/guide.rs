@@ -11,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const GUIDE_NAME: &str = "banco-de-skills";
-pub const GUIDE_VERSION: &str = "2";
+pub const GUIDE_VERSION: &str = "3";
 const VERSION_KEY: &str = "skillbank-guide-version";
 
 const SKILL_MD: &str = include_str!("../assets/guide/banco-de-skills/SKILL.md");
@@ -125,7 +125,48 @@ pub fn install(ctx: &Context, agents: &[AgentId], force: bool, bin_path: &str) -
         }
         out.push(GuideResult { dir: t.dir, agents: t.agents, action: action.into() });
     }
+    out.extend(cleanup_legacy(ctx));
     Ok(out)
+}
+
+/// Carpetas globales que algún agente lee pero que ya no son la principal de ninguno
+/// (p. ej. `~/.agents/skills`, que se usaba para Codex). La guía no debe vivir ahí: Cursor
+/// la vería dos veces.
+fn legacy_dirs(ctx: &Context) -> Vec<PathBuf> {
+    let home = &ctx.paths.home;
+    let primaries: Vec<PathBuf> = AgentId::ALL
+        .into_iter()
+        .map(|a| crate::agents::primary_dir(&ctx.config.agent(a), Scope::Global, home, &ctx.paths))
+        .collect();
+    let mut out = Vec::new();
+    for a in AgentId::ALL {
+        for d in crate::agents::read_dirs(&ctx.config.agent(a), Scope::Global, home, &ctx.paths) {
+            if !primaries.contains(&d) && !out.contains(&d) {
+                out.push(d);
+            }
+        }
+    }
+    out
+}
+
+/// Borra las copias **propias** de la guía en carpetas heredadas. Nunca toca una skill ajena.
+pub fn cleanup_legacy(ctx: &Context) -> Vec<GuideResult> {
+    let mut out = Vec::new();
+    for d in legacy_dirs(ctx) {
+        let dir = d.join(GUIDE_NAME);
+        let (state, _) = state_of(&dir);
+        if state == "current" || state == "outdated" {
+            let removed = if fsutil::is_symlink(&dir) { fs::remove_file(&dir) } else { fs::remove_dir_all(&dir) };
+            if removed.is_ok() {
+                out.push(GuideResult {
+                    dir: dir.display().to_string(),
+                    agents: vec![],
+                    action: "removed_legacy".into(),
+                });
+            }
+        }
+    }
+    out
 }
 
 fn same_content(dir: &Path, files: &[(&str, String)]) -> bool {
@@ -156,6 +197,7 @@ pub fn uninstall(ctx: &Context, agents: &[AgentId]) -> Result<Vec<GuideResult>> 
         };
         out.push(GuideResult { dir: t.dir, agents: t.agents, action: action.into() });
     }
+    out.extend(cleanup_legacy(ctx));
     Ok(out)
 }
 

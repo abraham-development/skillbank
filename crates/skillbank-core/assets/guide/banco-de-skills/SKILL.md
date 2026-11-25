@@ -1,7 +1,7 @@
 ---
 name: banco-de-skills
-description: Gestiona el banco personal de skills del usuario con el CLI `skillbank` (Banco de Skills). Guarda (push) en el banco una skill de este proyecto o de la carpeta global, trae (pull) una skill del banco a este proyecto, y lista, busca, muestra y valida skills. Úsala cuando el usuario diga "sube/guarda/lleva esta skill a mi banco", "push this skill to my skill bank", "trae la skill X de mi banco", "bring skill X from my bank", "¿qué skills tengo en el banco?", "busca en mi banco una skill para…", o mencione skillbank o Banco de Skills.
-compatibility: Requiere el CLI `skillbank` en el PATH (Linux). Sirve para Claude Code, Codex, Cursor y Antigravity.
+description: Gestiona el banco personal de skills del usuario con el CLI `skillbank` (Banco de Skills). Guarda (push) en el banco una skill de este proyecto o de la carpeta global, trae (pull) una skill del banco a este proyecto, y lista, busca, muestra y valida skills. Úsala cuando el usuario diga "conéctate con mi banco de skills", "sube/guarda/lleva esta skill a mi banco", "push this skill to my skill bank", "trae la skill X de mi banco", "bring skill X from my bank", "¿qué skills tengo en el banco?", "busca en mi banco una skill para…", o mencione skillbank o Banco de Skills.
+compatibility: Requiere el CLI `skillbank` en el PATH (Linux). Sirve para Claude Code, Cursor y Antigravity.
 metadata:
   skillbank-guide-version: "{{GUIDE_VERSION}}"
 ---
@@ -18,17 +18,33 @@ Si tampoco existen, dile al usuario que instale Banco de Skills y detente.
 ## Reglas de oro
 
 1. Usa **siempre** `--json` y lee `ok`, `code` y `exit_code` de la respuesta.
-2. Identifícate con `--agent <tú>`: `claude`, `codex`, `cursor` o `antigravity`.
+2. Identifícate **siempre** con `--agent <tú>`: `claude`, `cursor` o `antigravity`. Así la app
+   del usuario sabe qué agente está conectado.
 3. **Nunca uses `--force` sin un "sí" explícito del usuario.** Antes, muéstrale el resumen de cambios.
 4. Nunca ejecutes `skillbank remove` si el usuario no lo pidió expresamente.
 5. No crees enlaces simbólicos, no escribas en `~/.claude/skills/synced/` y no modifiques esta skill.
 6. Nunca ejecutes `rclone config` (es interactivo): si hace falta, explícale al usuario cómo hacerlo.
 
+## Conectarse con el banco
+
+Cuando el usuario diga "conéctate con mi banco de skills" (o algo parecido), ejecuta
+`skillbank connect --agent <tú> --json` y dile el resultado. La app de escritorio del usuario
+mostrará tu ícono en verde. Si `data.guide` no es `current`, sugiérele
+`skillbank agents install-guide`.
+
+## Dónde se instalan las skills
+
+| Agente | Solo este proyecto | Global (todos los proyectos) |
+|---|---|---|
+| Claude Code | `.claude/skills/` | `~/.claude/skills/` |
+| Cursor | `.cursor/skills/` (también lee `.claude/skills/` y `.agents/skills/`) | `~/.cursor/skills/` (también lee `~/.claude/skills/`) |
+| Antigravity | `.agents/skills/` | `~/.gemini/config/skills/` |
+
 ## Subir una skill al banco (push)
 
 1. Ubica la carpeta de la skill (la que contiene `SKILL.md`). Suele estar en
-   `.claude/skills/<nombre>/`, `.agents/skills/<nombre>/` o `.cursor/skills/<nombre>/`,
-   o en las carpetas globales equivalentes bajo `~`. También puedes pasar solo el nombre.
+   `.claude/skills/<nombre>/`, `.cursor/skills/<nombre>/` o `.agents/skills/<nombre>/`,
+   o en las carpetas globales de la tabla. También puedes pasar solo el nombre.
 2. Valida: `skillbank validate <ruta> --json`. Si hay errores, propón la corrección,
    espera la aprobación del usuario, corrige y vuelve a validar.
 3. Sube: `skillbank push <ruta> --agent <tú> --json` (opcional: `--tags tag1,tag2`).
@@ -47,11 +63,15 @@ Si tampoco existen, dile al usuario que instale Banco de Skills y detente.
 
 1. Si el nombre no es exacto, busca primero: `skillbank search "<texto>" --json`.
    Si hay varias coincidencias, pregunta cuál.
-2. Trae: `skillbank pull <nombre> --agent <tú> --json`. Por defecto se copia al proyecto
-   actual. Usa `--global` solo si el usuario lo pide.
-3. Interpreta el resultado:
+2. **¿Proyecto o global?** Si el usuario no lo dijo, pregúntale:
+   "¿La instalo solo para este proyecto o para todos tus proyectos (global)?".
+3. Trae:
+   - Solo este proyecto: `skillbank pull <nombre> --agent <tú> --json`
+   - Global: `skillbank pull <nombre> --agent <tú> --global --json`
+4. Interpreta el resultado:
    - Cada elemento de `data.items` trae `path` y `action` (`installed`, `updated` o `unchanged`).
-     Dile al usuario la ruta final. Claude Code detecta la skill sin reiniciar.
+     Dile al usuario la ruta final. Claude Code la detecta sin reiniciar; en Antigravity
+     puede hacer falta `/skills reload` y en Cursor, reiniciar.
    - **exit 5 `CONFLICT`** → ya hay una copia local distinta (`reason`: `modified`, `unregistered`
      o `symlink`). Si la copia local tiene cambios valiosos, ofrece subirlos primero con `push`.
      Solo con un sí explícito, repite con `--force`.

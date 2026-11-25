@@ -2,7 +2,7 @@
 
 App de escritorio (Tauri 2 + React) y CLI (`skillbank`) para guardar Agent Skills
 (carpetas con `SKILL.md`) en un banco personal y reutilizarlas entre proyectos y agentes
-(Claude Code, Codex, Cursor, Antigravity). Plataforma objetivo: Ubuntu 26.04.
+(Claude Code, Cursor y Antigravity; Codex se quitó a propósito). Plataforma objetivo: Ubuntu 26.04.
 
 ## Estructura
 
@@ -12,8 +12,10 @@ App de escritorio (Tauri 2 + React) y CLI (`skillbank`) para guardar Agent Skill
   `assets/guide/`). La app y el CLI no duplican lógica: la llaman desde aquí.
 - `crates/skillbank-cli/` — el binario `skillbank` (clap). `cmd.rs` adapta el núcleo a
   la salida humana/JSON de `output.rs`.
-- `src-tauri/` — app de escritorio (Tauri 2): `commands.rs` expone el núcleo a la interfaz
-  (solo lectura por ahora), `watcher.rs` emite `bank-changed`/`installs-changed`.
+- `src-tauri/` — app de escritorio (Tauri 2): `commands.rs` expone el núcleo a la interfaz,
+  `watcher.rs` emite `bank-changed`/`installs-changed`/`agents-changed`.
+- Conexión de agentes: `activity.rs` (núcleo) guarda en `~/.local/state/skillbank/agents.json`
+  cada `skillbank connect` y cada uso identificado (`--agent`, `CLAUDECODE=1`, `CURSOR_AGENT`).
 - `src/` — interfaz React + Vite + Tailwind 4 (`pages/`, `components/`, `lib/api.ts`).
   `src/dev/` es una vista previa con datos de ejemplo para el navegador (solo en `pnpm dev`).
 - `docs/` — reglas del validador, formato JSON del CLI, checklist manual.
