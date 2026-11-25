@@ -185,7 +185,7 @@ Tauri: comandos `async` con `spawn_blocking` que llaman al núcleo. Capacidades 
 - `scan --global --import` trae las skills actuales de `~/.claude/skills` y `~/.agents/skills` sin duplicar los symlinks.
 
 **Fase 2 — App de escritorio**:
-- 2a: paquetes apt + scaffold Tauri + Biblioteca y Detalle + watcher;
+- 2a: paquetes apt + scaffold Tauri + ícono de la app + entrada `.desktop` de desarrollo + Biblioteca y Detalle + watcher;
 - 2b: editor, asistente, etiquetas;
 - 2c: instalar, instalaciones, importar/exportar, ajustes;
 - 2d: `.deb` con `/usr/bin/skillbank` y autocompletado.
@@ -193,7 +193,8 @@ Tauri: comandos `async` con `spawn_blocking` que llaman al núcleo. Capacidades 
 *Listo cuando*:
 - un `push` desde el CLI aparece en la GUI en menos de 1 s;
 - editar en la GUI mientras el CLI sobrescribe muestra el banner de conflicto;
-- `apt install ./banco-de-skills_*.deb` deja el CLI y la entrada en el menú.
+- `apt install ./banco-de-skills_*.deb` deja el CLI y **"Banco de Skills" aparece en Mostrar aplicaciones (Show Apps) de Ubuntu** con su ícono (archivo `.desktop` en `/usr/share/applications`, categoría Desarrollo); se puede anclar al dock.
+- Durante el desarrollo (antes del .deb), `scripts/install-desktop-entry.sh` crea `~/.local/share/applications/banco-de-skills.desktop` apuntando al binario compilado, para que la app ya salga en Show Apps.
 
 **Fase 3 — Sincronización con Drive**: `core::sync`, `skillbank sync`, pantalla de Sincronización, sincronización automática. *Listo cuando*:
 - pasan las pruebas con un rclone falso y con un bisync real entre dos carpetas temporales;

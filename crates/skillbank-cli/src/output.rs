@@ -120,6 +120,12 @@ fn render_error_data(data: &Value) -> String {
             }
         }
     }
+    if let Some(checks) = data.get("checks").and_then(Value::as_array) {
+        s.push_str(&render_checks(checks));
+    }
+    if let Some(rows) = data.get("rows").and_then(Value::as_array) {
+        s.push_str(&render_import_rows(rows));
+    }
     if let Some(c) = data.get("candidates").and_then(Value::as_array) {
         for p in c {
             s.push_str(&format!("  • {}\n", p.as_str().unwrap_or("")));
@@ -179,6 +185,62 @@ pub fn render_diagnostics(diags: &[Value]) -> String {
             for (i, line) in h.lines().enumerate() {
                 s.push_str(&format!("      {}{line}\n", if i == 0 { "→ " } else { "  " }));
             }
+        }
+    }
+    s
+}
+
+pub fn render_checks(checks: &[Value]) -> String {
+    let mut s = String::new();
+    for c in checks {
+        let st = c.get("status").and_then(Value::as_str).unwrap_or("");
+        let sym = match st {
+            "ok" => "✓",
+            "warn" => "⚠",
+            "error" => "✗",
+            _ => "ℹ",
+        };
+        let fixed = c.get("fixed").and_then(Value::as_bool) == Some(true);
+        let fixable = c.get("fixable").and_then(Value::as_bool) == Some(true);
+        let suffix = if fixed {
+            "  (arreglado)"
+        } else if fixable {
+            "  (se arregla con --fix)"
+        } else {
+            ""
+        };
+        s.push_str(&format!("  {sym} {}{suffix}\n", c.get("message").and_then(Value::as_str).unwrap_or("")));
+        if !fixed && let Some(h) = c.get("hint").and_then(Value::as_str) {
+            s.push_str(&format!("      → {h}\n"));
+        }
+    }
+    s
+}
+
+pub fn render_import_rows(rows: &[Value]) -> String {
+    let mut s = String::new();
+    for r in rows {
+        let status = match r.get("status").and_then(Value::as_str).unwrap_or("") {
+            "new" => "nueva",
+            "same" => "igual",
+            "different" => "distinta",
+            "invalid" => "inválida",
+            "duplicate" => "duplicada",
+            other => other,
+        };
+        let action = match r.get("action").and_then(Value::as_str).unwrap_or("") {
+            "import" => "se importa",
+            "update" => "se sobrescribe",
+            "conflict" => "CONFLICTO",
+            _ => "se omite",
+        };
+        s.push_str(&format!(
+            "  • {}  [{status}] {action}  ({})\n",
+            r.get("name").and_then(Value::as_str).unwrap_or("?"),
+            r.get("source").and_then(Value::as_str).unwrap_or("")
+        ));
+        if let Some(d) = r.get("diagnostics").and_then(Value::as_array) {
+            s.push_str(&render_diagnostics(d));
         }
     }
     s

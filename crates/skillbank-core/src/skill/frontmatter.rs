@@ -113,3 +113,78 @@ pub fn type_name(v: &Value) -> &'static str {
         Value::Tagged(_) => "valor etiquetado",
     }
 }
+
+/// Rango de líneas (índices 0-based, sin incluir los `---`) del frontmatter dentro del texto.
+fn yaml_line_range(lines: &[&str]) -> Option<(usize, usize)> {
+    if lines.first().map(|l| l.trim_end_matches('\r').trim_end().trim_start_matches('\u{feff}')) != Some("---") {
+        return None;
+    }
+    let end = lines.iter().enumerate().skip(1).find(|(_, l)| {
+        let t = l.trim_end_matches('\r').trim_end();
+        t == "---" || t == "..."
+    })?;
+    Some((1, end.0))
+}
+
+fn top_level_key(line: &str) -> Option<&str> {
+    if line.starts_with([' ', '\t', '#', '-']) {
+        return None;
+    }
+    let pos = line.find(':')?;
+    let key = line[..pos].trim().trim_matches(|c| c == '"' || c == '\'');
+    (!key.is_empty() && !key.contains(' ')).then_some(key)
+}
+
+/// Quita del frontmatter las claves de primer nivel indicadas (con sus líneas de continuación),
+/// conservando el resto del texto tal cual.
+pub fn remove_top_level_keys(text: &str, keys: &[String]) -> String {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let Some((start, end)) = yaml_line_range(&lines) else { return text.to_string() };
+    let mut out: Vec<&str> = Vec::with_capacity(lines.len());
+    let mut skipping = false;
+    for (i, line) in lines.iter().enumerate() {
+        if i >= start && i < end {
+            if let Some(k) = top_level_key(line) {
+                skipping = keys.iter().any(|x| x == k);
+            } else if !(line.starts_with([' ', '\t', '-']) || line.trim().is_empty()) {
+                skipping = false;
+            }
+            if skipping {
+                continue;
+            }
+        }
+        out.push(line);
+    }
+    out.join("\n")
+}
+
+/// Cambia el valor de `name:` en el frontmatter. Devuelve `None` si no hay `name` de primer nivel.
+pub fn set_name(text: &str, new_name: &str) -> Option<String> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let (start, end) = yaml_line_range(&lines)?;
+    let idx = (start..end).find(|i| top_level_key(lines[*i]) == Some("name"))?;
+    let cr = if lines[idx].ends_with('\r') { "\r" } else { "" };
+    let replacement = format!("name: {new_name}{cr}");
+    let mut out: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+    out[idx] = replacement;
+    Some(out.join("\n"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quita_claves_con_continuacion() {
+        let t = "---\nname: x\nhooks:\n  PreToolUse:\n    - a\nmodel: sonnet\ndescription: d\nallowed-tools:\n  - Read\n---\ncuerpo\nmodel: no se toca\n";
+        let r = remove_top_level_keys(t, &["hooks".into(), "model".into(), "allowed-tools".into()]);
+        assert_eq!(r, "---\nname: x\ndescription: d\n---\ncuerpo\nmodel: no se toca\n");
+    }
+
+    #[test]
+    fn cambia_el_nombre() {
+        let t = "---\ndescription: d\nname: viejo\n---\nname: cuerpo\n";
+        assert_eq!(set_name(t, "nuevo").unwrap(), "---\ndescription: d\nname: nuevo\n---\nname: cuerpo\n");
+        assert!(set_name("sin frontmatter", "x").is_none());
+    }
+}

@@ -82,6 +82,33 @@ En conflicto (exit 5) **no se escribe nada** y `data` es este mismo objeto.
 - `show`: resumen + `frontmatter`, `body` (con `--body`), `files`, `diagnostics`, `meta`, `installs[{path, scope, agents, status}]`.
 - `validate`: `{path, profile, valid, report: {name, description, frontmatter, body_lines, body_tokens_est, claude_code_fields, diagnostics}}`.
 
+### tag / rename / new
+
+- `tag <n>`: `{name, tags, changed}`. Sin nombre: lista de `{tag, count}`.
+- `rename`: `{old, new, path, installs_with_old_name}`.
+- `new`: `{name, path, template, in_bank, files}`.
+
+### export / import
+
+- `export`: lista de `{name, path, files, stripped_keys, warnings}`. Con `--all`: `{path, skills}`.
+- `import`: `{source, kind: "zip|dir|backup", rows, imported, updated, dry_run}` donde cada fila es
+  `{name, source, status: "new|same|different|invalid|duplicate", action: "import|update|skip|conflict", diagnostics}`.
+  Con alguna fila `conflict` (exit 5) **no se importa nada** y `data` es este mismo objeto.
+
+### installed / outdated / scan
+
+- `installed`: lista de registros `{id, skill, scope, agents, project_root, path, installed_hash, installed_at, origin, status, status_es, disk_hash, bank_hash}`.
+- `outdated`: `{items: [igual que installed], updated: [rutas], registry_warning}`.
+- `status`: `up_to_date`, `outdated` (actualizable sin riesgo), `modified` (cambios locales),
+  `diverged` (cambiaron ambas), `missing` (la carpeta ya no existe), `orphan` (ya no está en el banco).
+- `scan`: `{scope, project_root, dirs, entries, registered, imported}`; cada entrada
+  `{name, path, real_path, also_at, scope, agents, synced, status: "same|different|absent|invalid", registered, action}`.
+
+### doctor
+
+`{checks: [{id, status: "ok|info|warn|error", message, hint, fixable, fixed}], errors, warnings, fixed}`.
+Con algún `error`, el comando sale con código 1.
+
 ### Diagnostic
 
 ```json

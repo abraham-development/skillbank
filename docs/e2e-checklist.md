@@ -23,7 +23,8 @@ Marca cada punto al probarlo con agentes reales.
 
 - [ ] Un `push` desde el CLI aparece en la app en menos de 1 s.
 - [ ] Editar en la app mientras el CLI sobrescribe la misma skill muestra el aviso de conflicto.
-- [ ] `sudo apt install ./banco-de-skills_*.deb` deja `/usr/bin/skillbank` y la entrada en el menú; `apt remove` limpia.
+- [ ] "Banco de Skills" aparece en **Mostrar aplicaciones** (Show Apps) con su ícono, abre la app y se puede anclar al dock.
+- [ ] `sudo apt install ./banco-de-skills_*.deb` deja `/usr/bin/skillbank` y la app en Show Apps; `apt remove` limpia ambos.
 
 ## Fase 3 — Drive
 

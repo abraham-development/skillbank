@@ -11,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const GUIDE_NAME: &str = "banco-de-skills";
-pub const GUIDE_VERSION: &str = "1";
+pub const GUIDE_VERSION: &str = "2";
 const VERSION_KEY: &str = "skillbank-guide-version";
 
 const SKILL_MD: &str = include_str!("../assets/guide/banco-de-skills/SKILL.md");

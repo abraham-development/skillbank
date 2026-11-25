@@ -8,6 +8,10 @@
 - [list, search, show, path](#list-search-show-path)
 - [validate](#validate)
 - [remove](#remove)
+- [tag, rename, new](#tag-rename-new)
+- [export, import](#export-import)
+- [installed, outdated, scan](#installed-outdated-scan)
+- [doctor](#doctor)
 - [agents](#agents)
 - [Formato JSON](#formato-json)
 
@@ -66,6 +70,36 @@
 
 `skillbank remove <nombre> --yes` — mueve la skill a la papelera local (7 días).
 **Solo si el usuario lo pidió.**
+
+## tag, rename, new
+
+- `skillbank tag [<nombre>] [--add a,b] [--remove a] [--set a,b]` — sin nombre, lista las etiquetas.
+- `skillbank rename <viejo> <nuevo>` — cambia carpeta, `name` y metadatos. Las copias ya
+  instaladas conservan el nombre anterior.
+- `skillbank new <nombre> [--template basica|con-scripts|con-referencias] [-d "…"] [--dir DIR | --in-bank] [--tags a,b]`
+
+## export, import
+
+- `skillbank export <nombre>... [-o archivo.zip|carpeta] [--claude-ai] [--strip-nonstandard]`
+  — un `.zip` por skill con `<nombre>/SKILL.md…` (formato de claude.ai).
+- `skillbank export --all [-o carpeta]` — respaldo completo (`bank.json`, `skills/`, `meta/`).
+- `skillbank import <zip|carpeta> [--skip-existing | --force] [--only a,b] [--tags a,b] [--dry-run]`
+  — si hay versiones distintas en el banco, no importa nada sin `--skip-existing` o `--force`.
+  Rechaza zips con rutas peligrosas, enlaces simbólicos, más de 2000 entradas o más de 50 MB.
+
+## installed, outdated, scan
+
+- `skillbank installed [<nombre>] [--project DIR]` — dónde está instalada cada skill.
+- `skillbank outdated [--project DIR] [--update]` — estados: `up_to_date`, `outdated`
+  (se actualiza sola con `--update`), `modified` (cambios locales), `diverged`, `missing`, `orphan`.
+- `skillbank scan [DIR | --global] [--register] [--import]` — compara las skills de las
+  carpetas de los agentes con el banco (`same`, `different`, `absent`, `invalid`).
+  `--register` anota las idénticas como instaladas; `--import` sube las que faltan.
+
+## doctor
+
+`skillbank doctor [--fix]` — revisa banco, CLI en el PATH, guía, metadatos, registro y rclone.
+`--fix` solo aplica arreglos seguros.
 
 ## agents
 

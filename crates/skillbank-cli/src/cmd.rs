@@ -1,7 +1,7 @@
 //! Implementación de cada comando sobre `skillbank-core`.
 
 use crate::cli::*;
-use crate::output::{Reply, render_diagnostics};
+use crate::output::{Reply, render_checks, render_diagnostics, render_import_rows};
 use serde_json::{Value, json};
 use skillbank_core::agents::{
     AgentId, AgentRequest, Scope, agent_from_env, detect_project_agents, plan_destinations, primary_dir, resolve_agents,
@@ -11,7 +11,7 @@ use skillbank_core::install::{PullAction, PullOptions, PushOptions, PushStatus};
 use skillbank_core::paths::{pretty, project_root};
 use skillbank_core::skill::resolve_skill_dir;
 use skillbank_core::skill::validate::{Profile, Severity, ValidateOptions, validate_dir};
-use skillbank_core::{Context, guide, hash, install, search};
+use skillbank_core::{Context, archive, doctor as core_doctor, guide, hash, install, manage, search, status};
 use std::path::{Path, PathBuf};
 
 fn cwd() -> PathBuf {
@@ -378,11 +378,7 @@ pub fn agents(ctx: &Context, cmd: &AgentsCmd) -> Result<Reply> {
                 let p = guide::present_agents(ctx);
                 if p.is_empty() { vec![AgentId::Claude] } else { p }
             };
-            let bin = std::env::current_exe()
-                .ok()
-                .and_then(|p| std::fs::canonicalize(p).ok())
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|| "skillbank".into());
+            let bin = self_bin();
             let results =
                 if *uninstall { guide::uninstall(ctx, &agents)? } else { guide::install(ctx, &agents, *force, &bin)? };
             let mut human = String::new();
@@ -434,4 +430,288 @@ pub fn config(ctx: &Context, cmd: &ConfigCmd) -> Result<Reply> {
             Ok(Reply::new("Configuración efectiva:", &ctx.config).human(text))
         }
     }
+}
+
+fn self_bin() -> String {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| std::fs::canonicalize(p).ok())
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "skillbank".into())
+}
+
+fn split_list(values: &[String]) -> Vec<String> {
+    values.iter().flat_map(|v| v.split(',')).map(|t| t.trim().to_string()).filter(|t| !t.is_empty()).collect()
+}
+
+// ───────────── tag / rename / new ─────────────
+
+pub fn tag(ctx: &Context, a: &TagArgs) -> Result<Reply> {
+    let Some(name) = &a.name else {
+        let tags = manage::all_tags(ctx)?;
+        let human: String = tags.iter().map(|(t, n)| format!("  #{t}  ({n})\n")).collect();
+        let data: Vec<Value> = tags.iter().map(|(t, n)| json!({"tag": t, "count": n})).collect();
+        let msg = if tags.is_empty() {
+            "No hay etiquetas todavía.".to_string()
+        } else {
+            format!("{} etiqueta(s):", tags.len())
+        };
+        return Ok(Reply::new(msg, data).human(human));
+    };
+    let opts = manage::TagOptions {
+        add: split_list(&a.add),
+        remove: split_list(&a.remove),
+        set: a.set.as_ref().map(|s| split_list(std::slice::from_ref(s))),
+    };
+    let out = manage::tag(ctx, name, &opts)?;
+    let shown = if out.tags.is_empty() { "(sin etiquetas)".to_string() } else { format!("#{}", out.tags.join(" #")) };
+    let msg = if out.changed {
+        format!("✓ Etiquetas de '{name}': {shown}")
+    } else {
+        format!("Etiquetas de '{name}': {shown}")
+    };
+    Ok(Reply::new(msg, &out))
+}
+
+pub fn rename(ctx: &Context, old: &str, new: &str) -> Result<Reply> {
+    let out = manage::rename(ctx, old, new)?;
+    let mut human = format!("  Ruta: {}\n", ps(ctx, &out.path));
+    if out.installs_with_old_name > 0 {
+        human.push_str(&format!(
+            "  {} copia(s) instaladas siguen llamándose '{old}'; tráelas de nuevo con `skillbank pull {new}`.\n",
+            out.installs_with_old_name
+        ));
+    }
+    Ok(Reply::new(format!("✓ '{old}' ahora se llama '{new}'."), &out).human(human))
+}
+
+pub fn new(ctx: &Context, a: &NewArgs) -> Result<Reply> {
+    let dest =
+        if a.in_bank { manage::NewDest::Bank } else { manage::NewDest::Dir(abs_opt(&a.dir).unwrap_or_else(cwd)) };
+    let opts = manage::NewOptions {
+        template: a.template.clone(),
+        description: a.description.clone(),
+        tags: a.tags.as_ref().map(|t| split_list(std::slice::from_ref(t))).unwrap_or_default(),
+        dest,
+    };
+    let out = manage::new_skill(ctx, &a.name, &opts)?;
+    let mut human = format!("  Ruta: {}\n  Archivos: {}\n", ps(ctx, &out.path), out.files.join(", "));
+    human.push_str(if out.in_bank {
+        "  Edita SKILL.md y tráela a un proyecto con `skillbank pull`.\n"
+    } else {
+        "  Edita SKILL.md y, cuando esté lista, súbela con `skillbank push`.\n"
+    });
+    Ok(Reply::new(format!("✓ Skill '{}' creada con la plantilla '{}'.", out.name, out.template), &out).human(human))
+}
+
+// ───────────── export / import ─────────────
+
+fn is_zip_path(p: &Path) -> bool {
+    p.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip"))
+}
+
+pub fn export(ctx: &Context, a: &ExportArgs) -> Result<Reply> {
+    if a.all {
+        let out = match &a.output {
+            Some(p) if is_zip_path(p) => p.clone(),
+            other => {
+                let dir = other.clone().unwrap_or_else(cwd);
+                dir.join(format!("banco-de-skills-respaldo-{}.zip", chrono_stamp()))
+            }
+        };
+        let r = archive::export_backup(ctx, &out)?;
+        return Ok(Reply::new(format!("✓ Respaldo de {} skill(s) en {}.", r.skills, ps(ctx, &r.path)), &r));
+    }
+    if a.names.len() > 1 && a.output.as_deref().is_some_and(is_zip_path) {
+        return Err(CoreError::usage("Con varias skills, -o debe ser una carpeta (se crea un .zip por skill)."));
+    }
+    let opts = archive::ExportOptions { claude_ai: a.claude_ai, strip_nonstandard: a.strip_nonstandard };
+    let mut results = Vec::new();
+    for name in &a.names {
+        let out = match &a.output {
+            Some(p) if is_zip_path(p) => p.clone(),
+            other => other.clone().unwrap_or_else(cwd).join(format!("{name}.zip")),
+        };
+        results.push(archive::export_skill(ctx, name, &out, &opts)?);
+    }
+    let mut human = String::new();
+    let mut warnings = Vec::new();
+    for r in &results {
+        human.push_str(&format!("  • {} → {} ({} archivos)\n", r.name, ps(ctx, &r.path), r.files));
+        if !r.stripped_keys.is_empty() {
+            human.push_str(&format!("    campos quitados en la copia: {}\n", r.stripped_keys.join(", ")));
+        }
+        warnings.extend(diag_warnings(&r.warnings));
+    }
+    let msg = if a.claude_ai { "✓ Exportado para claude.ai." } else { "✓ Exportado." };
+    Ok(Reply::new(msg, &results).human(human).warnings(warnings))
+}
+
+fn chrono_stamp() -> String {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    // AAAAMMDD-HHMM en UTC sin depender de chrono en el CLI.
+    let days = now / 86_400;
+    let secs = now % 86_400;
+    let (y, m, d) = civil_from_days(days as i64);
+    format!("{y:04}{m:02}{d:02}-{:02}{:02}", secs / 3600, (secs % 3600) / 60)
+}
+
+fn civil_from_days(z: i64) -> (i64, u32, u32) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+pub fn import(ctx: &Context, a: &ImportArgs) -> Result<Reply> {
+    let opts = archive::ImportOptions {
+        force: a.force,
+        skip_existing: a.skip_existing,
+        only: a.only.as_ref().map(|o| split_list(std::slice::from_ref(o))),
+        tags: a.tags.as_ref().map(|t| split_list(std::slice::from_ref(t))),
+        dry_run: a.dry_run,
+    };
+    let path = if a.source.is_absolute() { a.source.clone() } else { cwd().join(&a.source) };
+    let out = archive::import(ctx, &path, &opts)?;
+    let rows: Vec<Value> = out.rows.iter().map(|r| serde_json::to_value(r).unwrap()).collect();
+    let msg = if out.dry_run {
+        format!("Simulación: se importarían {} y se sobrescribirían {}.", out.imported, out.updated)
+    } else {
+        format!("✓ Importadas {} skill(s) nuevas, {} sobrescritas.", out.imported, out.updated)
+    };
+    Ok(Reply::new(msg, &out).human(render_import_rows(&rows)))
+}
+
+// ───────────── installed / outdated / scan ─────────────
+
+fn render_installs(ctx: &Context, items: &[status::InstallView]) -> String {
+    items
+        .iter()
+        .map(|v| {
+            format!(
+                "  • {} → {}  [{}] ({})\n",
+                v.record.skill,
+                ps(ctx, &v.record.path),
+                v.status_es,
+                agents_label(&v.record.agents)
+            )
+        })
+        .collect()
+}
+
+fn abs_opt(p: &Option<PathBuf>) -> Option<PathBuf> {
+    p.as_ref().map(|p| if p.is_absolute() { p.clone() } else { cwd().join(p) })
+}
+
+pub fn installed(ctx: &Context, a: &InstalledArgs) -> Result<Reply> {
+    let items = status::installed(ctx, a.name.as_deref(), abs_opt(&a.project).as_deref())?;
+    if items.is_empty() {
+        return Ok(Reply::new("No hay instalaciones registradas.", &items));
+    }
+    Ok(Reply::new(format!("{} instalación(es):", items.len()), &items).human(render_installs(ctx, &items)))
+}
+
+pub fn outdated(ctx: &Context, a: &OutdatedArgs) -> Result<Reply> {
+    let out = status::outdated(ctx, abs_opt(&a.project).as_deref(), a.update)?;
+    let pending: Vec<status::InstallView> =
+        out.items.iter().filter(|v| v.status != skillbank_core::registry::InstallStatus::UpToDate).cloned().collect();
+    let mut human = render_installs(ctx, &out.items);
+    if !a.update && pending.iter().any(|v| v.status == skillbank_core::registry::InstallStatus::Outdated) {
+        human.push_str("  → Las «desactualizadas» se actualizan sin riesgo con --update.\n");
+    }
+    if pending.iter().any(|v| {
+        matches!(
+            v.status,
+            skillbank_core::registry::InstallStatus::Modified | skillbank_core::registry::InstallStatus::Diverged
+        )
+    }) {
+        human.push_str("  → Las «modificadas»/«divergentes» tienen cambios locales: súbelas con push o tráelas con pull --force.\n");
+    }
+    let msg = if out.items.is_empty() {
+        "✓ Todas las instalaciones están al día.".to_string()
+    } else if !out.updated.is_empty() {
+        format!("✓ {} actualizada(s); {} pendiente(s).", out.updated.len(), pending.len())
+    } else {
+        format!("{} instalación(es) no están al día:", out.items.len())
+    };
+    let mut warnings = vec![];
+    if let Some(w) = &out.registry_warning {
+        warnings.push(json!({"code": "REGISTRY_NOT_WRITTEN", "message": w}));
+    }
+    Ok(Reply::new(msg, &out).human(human).warnings(warnings))
+}
+
+pub fn scan(ctx: &Context, a: &ScanArgs) -> Result<Reply> {
+    let opts = status::ScanOptions {
+        global: a.global,
+        dir: abs_opt(&a.dir),
+        cwd: cwd(),
+        register: a.register,
+        import: a.import,
+    };
+    let out = status::scan(ctx, &opts)?;
+    let mut human = String::new();
+    for e in &out.entries {
+        let st = match e.status.as_str() {
+            "same" => "= igual al banco",
+            "different" => "≠ distinta del banco",
+            "absent" => "+ no está en el banco",
+            _ => "✗ inválida",
+        };
+        let mut extra = Vec::new();
+        if e.synced {
+            extra.push("sincronizada desde claude.ai".to_string());
+        }
+        if let Some(r) = &e.real_path {
+            extra.push(format!("enlace a {}", ps(ctx, r)));
+        }
+        if let Some(act) = &e.action {
+            extra.push(if act == "imported" { "importada".into() } else { "registrada".into() });
+        }
+        let extra = if extra.is_empty() { String::new() } else { format!("  ({})", extra.join("; ")) };
+        human.push_str(&format!("  {:<28} {st}  {}{extra}\n", e.name, ps(ctx, &e.path)));
+    }
+    let absent = out.entries.iter().filter(|e| e.status == "absent").count();
+    if absent > 0 && !a.import {
+        human.push_str(&format!("  → {absent} skill(s) no están en el banco: súbelas con --import.\n"));
+    }
+    let msg = if out.entries.is_empty() {
+        "No encontré skills en las carpetas de los agentes.".to_string()
+    } else {
+        format!(
+            "{} skill(s) encontradas{}{}:",
+            out.entries.len(),
+            if out.imported > 0 { format!(", {} importadas", out.imported) } else { String::new() },
+            if out.registered > 0 { format!(", {} registradas", out.registered) } else { String::new() }
+        )
+    };
+    Ok(Reply::new(msg, &out).human(human))
+}
+
+// ───────────── doctor ─────────────
+
+pub fn doctor(ctx: &Context, fix: bool) -> Result<Reply> {
+    let r = core_doctor::doctor(ctx, fix, &self_bin());
+    let checks: Vec<Value> = r.checks.iter().map(|c| serde_json::to_value(c).unwrap()).collect();
+    if r.errors > 0 {
+        return Err(CoreError::new(
+            ErrorKind::Error,
+            format!("Diagnóstico: {} error(es), {} aviso(s).", r.errors, r.warnings),
+        )
+        .with_data(serde_json::to_value(&r)?));
+    }
+    let msg = match (r.warnings, r.fixed) {
+        (0, 0) => "✓ Todo en orden.".to_string(),
+        (0, f) => format!("✓ Todo en orden ({f} arreglo(s) aplicados)."),
+        (w, f) => {
+            format!("Diagnóstico: {w} aviso(s){}.", if f > 0 { format!(", {f} arreglados") } else { String::new() })
+        }
+    };
+    Ok(Reply::new(msg, &r).human(render_checks(&checks)))
 }

@@ -67,6 +67,33 @@ pub enum Command {
     /// Elimina una skill del banco (va a la papelera local 7 días).
     #[command(visible_alias = "rm")]
     Remove(RemoveArgs),
+    /// Cambia las etiquetas de una skill (o lista todas las etiquetas).
+    Tag(TagArgs),
+    /// Renombra una skill del banco (carpeta, `name` y metadatos).
+    Rename {
+        /// Nombre actual.
+        old: String,
+        /// Nombre nuevo.
+        new: String,
+    },
+    /// Crea una skill nueva desde una plantilla.
+    New(NewArgs),
+    /// Exporta skills a .zip (estándar, para claude.ai o respaldo completo).
+    Export(ExportArgs),
+    /// Importa skills desde un .zip o una carpeta (incluye respaldos completos).
+    Import(ImportArgs),
+    /// Dónde está instalada cada skill y en qué estado.
+    Installed(InstalledArgs),
+    /// Instalaciones que no están al día (y actualiza las seguras con --update).
+    Outdated(OutdatedArgs),
+    /// Busca skills en las carpetas de los agentes y las compara con el banco.
+    Scan(ScanArgs),
+    /// Revisa la instalación y el banco (con --fix aplica arreglos seguros).
+    Doctor {
+        /// Aplica los arreglos seguros.
+        #[arg(long)]
+        fix: bool,
+    },
     /// Agentes: rutas, detección e instalación de la skill guía.
     Agents {
         #[command(subcommand)]
@@ -223,4 +250,114 @@ pub enum ConfigCmd {
     Path,
     /// Muestra la configuración efectiva (TOML).
     Show,
+}
+
+#[derive(Debug, Args)]
+pub struct TagArgs {
+    /// Nombre de la skill (sin él, lista todas las etiquetas del banco).
+    pub name: Option<String>,
+    /// Etiquetas a añadir (separadas por comas).
+    #[arg(long, value_name = "A,B")]
+    pub add: Vec<String>,
+    /// Etiquetas a quitar.
+    #[arg(long, value_name = "A,B")]
+    pub remove: Vec<String>,
+    /// Reemplaza todas las etiquetas.
+    #[arg(long, value_name = "A,B", conflicts_with = "add")]
+    pub set: Option<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct NewArgs {
+    /// Nombre de la skill (minúsculas, números y guiones).
+    pub name: String,
+    /// Plantilla: basica, con-scripts o con-referencias.
+    #[arg(long, default_value = "basica")]
+    pub template: String,
+    /// Descripción: qué hace y cuándo usarla.
+    #[arg(long, short)]
+    pub description: Option<String>,
+    /// Etiquetas (solo con --in-bank).
+    #[arg(long, value_name = "A,B")]
+    pub tags: Option<String>,
+    /// Carpeta donde crearla (por defecto, el directorio actual).
+    #[arg(long, value_name = "DIR", conflicts_with = "in_bank")]
+    pub dir: Option<PathBuf>,
+    /// Crearla directamente en el banco.
+    #[arg(long)]
+    pub in_bank: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ExportArgs {
+    /// Skill(s) a exportar.
+    #[arg(required_unless_present = "all")]
+    pub names: Vec<String>,
+    /// Respaldo completo del banco (bank.json + skills + metadatos).
+    #[arg(long, conflicts_with_all = ["names", "claude_ai", "strip_nonstandard"])]
+    pub all: bool,
+    /// Archivo .zip o carpeta de destino (por defecto, el directorio actual).
+    #[arg(short, long, value_name = "RUTA")]
+    pub output: Option<PathBuf>,
+    /// Comprueba que claude.ai acepte la skill (solo los 6 campos estándar).
+    #[arg(long)]
+    pub claude_ai: bool,
+    /// Quita los campos no estándar solo en la copia exportada.
+    #[arg(long)]
+    pub strip_nonstandard: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ImportArgs {
+    /// Archivo .zip o carpeta.
+    pub source: PathBuf,
+    /// Sobrescribe skills del banco que sean distintas. Solo con permiso del usuario.
+    #[arg(long, conflicts_with = "skip_existing")]
+    pub force: bool,
+    /// Importa solo las nuevas y deja las que ya existen.
+    #[arg(long)]
+    pub skip_existing: bool,
+    /// Importa solo estas skills (separadas por comas).
+    #[arg(long, value_name = "A,B")]
+    pub only: Option<String>,
+    /// Etiquetas a añadir a lo importado.
+    #[arg(long, value_name = "A,B")]
+    pub tags: Option<String>,
+    /// Muestra qué pasaría sin escribir nada.
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct InstalledArgs {
+    /// Solo esta skill.
+    pub name: Option<String>,
+    /// Solo este proyecto.
+    #[arg(long, value_name = "DIR")]
+    pub project: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct OutdatedArgs {
+    /// Solo este proyecto (usa `.` para el actual).
+    #[arg(long, value_name = "DIR")]
+    pub project: Option<PathBuf>,
+    /// Actualiza las copias desactualizadas que no tienen cambios locales.
+    #[arg(long)]
+    pub update: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ScanArgs {
+    /// Carpeta del proyecto (por defecto, el directorio actual).
+    pub dir: Option<PathBuf>,
+    /// Escanea las carpetas globales de los agentes.
+    #[arg(long, conflicts_with = "dir")]
+    pub global: bool,
+    /// Registra como instaladas las copias idénticas al banco.
+    #[arg(long)]
+    pub register: bool,
+    /// Sube al banco las skills que no están (y las registra).
+    #[arg(long)]
+    pub import: bool,
 }

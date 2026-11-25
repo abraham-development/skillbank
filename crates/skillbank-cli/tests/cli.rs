@@ -446,3 +446,188 @@ fn completions_y_ayuda() {
     assert_eq!(o.code, 0);
     assert!(o.stdout.contains("vacío"), "{}{}", o.stdout, o.stderr);
 }
+
+// ───────────── Fase 1b ─────────────
+
+#[test]
+fn outdated_e_installed() {
+    let e = Env::new();
+    let a = e.project("a");
+    let src = write_skill(&a.join(".claude/skills"), "demo", "");
+    e.json(&a, &["push", "demo"]);
+    let b = e.project("b");
+    e.json(&b, &["pull", "demo", "--agent", "claude"]);
+    let c = e.project("c");
+    e.json(&c, &["pull", "demo", "--agent", "claude"]);
+    append(&c.join(".claude/skills/demo/SKILL.md"), "cambio en c\n");
+
+    let o = e.json(&a, &["installed", "demo"]);
+    assert_eq!(o.json["data"].as_array().unwrap().len(), 3);
+
+    append(&src.join("SKILL.md"), "mejora\n");
+    e.json(&a, &["push", "demo", "--force"]);
+    let o = e.json(&b, &["outdated"]);
+    let statuses: Vec<String> =
+        o.json["data"]["items"].as_array().unwrap().iter().map(|i| i["status"].as_str().unwrap().to_string()).collect();
+    assert!(statuses.contains(&"outdated".to_string()) && statuses.contains(&"diverged".to_string()), "{statuses:?}");
+
+    let o = e.json(&b, &["outdated", "--project", ".", "--update"]);
+    assert_eq!(o.json["data"]["updated"].as_array().unwrap().len(), 1);
+    assert!(fs::read_to_string(b.join(".claude/skills/demo/SKILL.md")).unwrap().contains("mejora"));
+    // La copia con cambios locales (c) no se tocó.
+    let o = e.json(&c, &["outdated", "--project", ".", "--update"]);
+    assert_eq!(o.json["data"]["updated"].as_array().unwrap().len(), 0);
+    assert!(fs::read_to_string(c.join(".claude/skills/demo/SKILL.md")).unwrap().contains("cambio en c"));
+}
+
+#[cfg(unix)]
+#[test]
+fn scan_global_con_symlinks_y_synced() {
+    let e = Env::new();
+    let h = e.home();
+    let real = write_skill(&h.join(".agents/skills"), "comun", "");
+    fs::create_dir_all(h.join(".claude/skills/synced")).unwrap();
+    std::os::unix::fs::symlink(&real, h.join(".claude/skills/comun")).unwrap();
+    write_skill(&h.join(".claude/skills/synced"), "de-claude-ai", "");
+    write_skill(&h.join(".claude/skills"), "propia", "");
+    let a = e.project("a");
+
+    let o = e.json(&a, &["scan", "--global"]);
+    let entries = o.json["data"]["entries"].as_array().unwrap().clone();
+    let names: Vec<&str> = entries.iter().map(|x| x["name"].as_str().unwrap()).collect();
+    assert_eq!(names.iter().filter(|n| **n == "comun").count(), 1, "el symlink no se cuenta dos veces: {names:?}");
+    let synced = entries.iter().find(|x| x["name"] == "de-claude-ai").unwrap();
+    assert_eq!(synced["synced"], true);
+    assert!(entries.iter().all(|x| x["status"] == "absent"));
+
+    let o = e.json(&a, &["scan", "--global", "--import"]);
+    assert_eq!(o.json["data"]["imported"], 3);
+    let o = e.json(&a, &["list"]);
+    assert_eq!(o.json["data"].as_array().unwrap().len(), 3);
+    // Solo se registran copias reales que no vienen de claude.ai.
+    let o = e.json(&a, &["installed"]);
+    let paths: Vec<String> =
+        o.json["data"].as_array().unwrap().iter().map(|x| x["path"].as_str().unwrap().to_string()).collect();
+    assert!(paths.iter().any(|p| p.ends_with(".agents/skills/comun")), "{paths:?}");
+    assert!(paths.iter().any(|p| p.ends_with(".claude/skills/propia")), "{paths:?}");
+    assert!(!paths.iter().any(|p| p.contains("synced")), "{paths:?}");
+}
+
+#[test]
+fn tag_rename_new() {
+    let e = Env::new();
+    let a = e.project("a");
+    let o = e.json(
+        &a,
+        &["new", "mi-skill", "--template", "con-scripts", "--dir", ".claude/skills", "-d", "Hace X. Úsala cuando Y."],
+    );
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert!(a.join(".claude/skills/mi-skill/scripts/ejemplo.sh").is_file());
+    assert_eq!(e.json(&a, &["new", "Mala Skill"]).code, 4);
+    assert_eq!(e.json(&a, &["new", "x", "--template", "nope"]).code, 2);
+    assert_eq!(e.json(&a, &["validate", ".claude/skills/mi-skill", "--profile", "claude-ai", "--strict"]).code, 0);
+
+    let o = e.json(&a, &["new", "en-banco", "--in-bank", "--tags", "uno,dos"]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert_eq!(e.json(&a, &["new", "en-banco", "--in-bank"]).code, 5);
+
+    let o = e.json(&a, &["tag", "en-banco", "--add", "tres", "--remove", "uno"]);
+    assert_eq!(o.json["data"]["tags"], serde_json::json!(["dos", "tres"]));
+    let o = e.json(&a, &["tag"]);
+    assert_eq!(o.json["data"].as_array().unwrap().len(), 2);
+
+    let o = e.json(&a, &["rename", "en-banco", "renombrada"]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert!(fs::read_to_string(e.bank().join("skills/renombrada/SKILL.md")).unwrap().contains("name: renombrada"));
+    assert!(e.bank().join("meta/renombrada.json").is_file());
+    assert!(!e.bank().join("meta/en-banco.json").exists());
+    assert_eq!(e.json(&a, &["validate", "renombrada"]).code, 0);
+    assert_eq!(e.json(&a, &["rename", "renombrada", "Mal"]).code, 4);
+}
+
+#[test]
+fn exportar_e_importar_desde_el_cli() {
+    let e = Env::new();
+    let a = e.project("a");
+    write_skill(&a.join(".claude/skills"), "demo", "");
+    e.json(&a, &["push", "demo", "--tags", "x"]);
+    let out = e.t.path().join("out");
+    let o = e.json(&a, &["export", "demo", "-o", out.to_str().unwrap()]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    assert!(out.join("demo.zip").is_file());
+    let o = e.json(&a, &["export", "--all", "-o", out.join("respaldo.zip").to_str().unwrap()]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+
+    // Banco nuevo (otro HOME) a partir del respaldo.
+    let e2 = Env::new();
+    let b = e2.project("b");
+    let o = e2.json(&b, &["import", out.join("respaldo.zip").to_str().unwrap(), "--dry-run"]);
+    assert_eq!(o.json["data"]["imported"], 1);
+    assert!(!e2.bank().join("skills/demo").exists());
+    let o = e2.json(&b, &["import", out.join("respaldo.zip").to_str().unwrap()]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    let o = e2.json(&b, &["list", "--tag", "x"]);
+    assert_eq!(o.json["data"].as_array().unwrap().len(), 1);
+
+    // Conflicto al importar una versión distinta.
+    let other = e2.t.path().join("otra");
+    write_skill(&other, "demo", "Distinta.\n");
+    let o = e2.json(&b, &["import", other.to_str().unwrap()]);
+    assert_eq!(o.code, 5);
+    assert_eq!(o.json["data"]["rows"][0]["action"], "conflict");
+}
+
+#[test]
+fn doctor_y_fix() {
+    let e = Env::new();
+    fs::create_dir_all(e.home().join(".claude")).unwrap();
+    let a = e.project("a");
+    write_skill(&a.join(".claude/skills"), "demo", "");
+    e.json(&a, &["push", "demo"]);
+    let b = e.project("b");
+    e.json(&b, &["pull", "demo", "--agent", "claude"]);
+    fs::remove_dir_all(b.join(".claude/skills/demo")).unwrap();
+    fs::remove_file(e.bank().join("meta/demo.json")).unwrap();
+
+    let o = e.json(&a, &["doctor"]);
+    assert_eq!(o.code, 0, "{}", o.stdout);
+    let ids: Vec<(String, String)> = o.json["data"]["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| (c["id"].as_str().unwrap().to_string(), c["status"].as_str().unwrap().to_string()))
+        .collect();
+    for want in ["guide", "meta-missing", "registry"] {
+        assert!(ids.iter().any(|(id, st)| id == want && st == "warn"), "{want}: {ids:?}");
+    }
+
+    let o = e.json(&a, &["doctor", "--fix"]);
+    assert!(o.json["data"]["fixed"].as_u64().unwrap() >= 3, "{}", o.stdout);
+    assert!(e.bank().join("meta/demo.json").is_file());
+    assert!(e.home().join(".claude/skills/banco-de-skills/SKILL.md").is_file());
+    let o = e.json(&a, &["installed"]);
+    assert_eq!(o.json["data"].as_array().unwrap().len(), 1);
+    let o = e.json(&a, &["doctor"]);
+    let warns: Vec<&Value> = o.json["data"]["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["status"] == "warn" && c["id"] != "cli")
+        .collect();
+    assert!(warns.is_empty(), "{warns:?}");
+}
+
+#[test]
+fn scan_import_no_pisa_copias_distintas_con_el_mismo_nombre() {
+    let e = Env::new();
+    let h = e.home();
+    write_skill(&h.join(".claude/skills"), "dup", "Versión de Claude.\n");
+    write_skill(&h.join(".agents/skills"), "dup", "Versión de Codex.\n");
+    let a = e.project("a");
+    let o = e.json(&a, &["scan", "--global", "--import"]);
+    assert_eq!(o.json["data"]["imported"], 1, "{}", o.stdout);
+    let st: Vec<&str> =
+        o.json["data"]["entries"].as_array().unwrap().iter().map(|x| x["status"].as_str().unwrap()).collect();
+    assert_eq!(st, vec!["same", "different"]);
+    assert!(fs::read_to_string(e.bank().join("skills/dup/SKILL.md")).unwrap().contains("Versión de Claude"));
+}

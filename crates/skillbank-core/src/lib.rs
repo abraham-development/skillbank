@@ -5,20 +5,24 @@
 #![allow(clippy::result_large_err)]
 
 pub mod agents;
+pub mod archive;
 pub mod bank;
 pub mod config;
 pub mod diff;
+pub mod doctor;
 pub mod error;
 pub mod fsutil;
 pub mod guide;
 pub mod hash;
 pub mod install;
 pub mod lock;
+pub mod manage;
 pub mod meta;
 pub mod paths;
 pub mod registry;
 pub mod search;
 pub mod skill;
+pub mod status;
 pub mod sync;
 pub mod text;
 

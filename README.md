@@ -5,8 +5,10 @@ Cursor o Antigravity, le dices al agente *"sube esta skill a mi banco"*, y en cu
 proyecto le dices *"trae la skill X de mi banco"*. Funciona con el estándar abierto
 [Agent Skills](https://agentskills.io/specification).
 
-> Estado: **Fase 1a** — núcleo + CLI `skillbank` listos. La app de escritorio (Fase 2) y la
-> sincronización con Google Drive (Fase 3) vienen después. Ver [docs/plan.md](docs/plan.md).
+> Estado: **Fase 1 completa** — núcleo + CLI `skillbank` listos (incluye importar/exportar,
+> registro de instalaciones y diagnóstico). La app de escritorio, que aparecerá en *Mostrar
+> aplicaciones* de Ubuntu (Fase 2), y la sincronización con Google Drive (Fase 3) vienen después.
+> Ver [docs/plan.md](docs/plan.md).
 
 ## Instalación
 
@@ -30,6 +32,22 @@ skillbank search "facturas pdf"                       # buscar
 skillbank show mi-skill --body                        # ver una skill
 skillbank validate ./mi-skill --profile claude-ai     # ¿se puede subir a claude.ai?
 skillbank agents list                                 # rutas y estado de cada agente
+```
+
+Más comandos:
+
+```bash
+skillbank new mi-skill --template con-scripts --dir .claude/skills -d "Qué hace. Úsala cuando…"
+skillbank tag mi-skill --add pdf,documentos           # etiquetas (sin nombre: lista todas)
+skillbank rename mi-skill pdf-extractor               # renombrar en el banco
+skillbank export mi-skill --claude-ai --strip-nonstandard -o ~/Descargas   # zip para claude.ai
+skillbank export --all -o ~/Respaldos                 # respaldo completo del banco
+skillbank import respaldo.zip --skip-existing         # importar zip o carpeta
+skillbank installed mi-skill                          # dónde está instalada
+skillbank outdated --project . --update               # actualizar copias sin cambios locales
+skillbank scan --global                               # skills de tus agentes que no están en el banco
+skillbank scan --global --import                      # … y subirlas
+skillbank doctor --fix                                # revisar y arreglar lo seguro
 ```
 
 Todos los comandos aceptan `--json` (un único objeto con `ok`, `code`, `exit_code`,

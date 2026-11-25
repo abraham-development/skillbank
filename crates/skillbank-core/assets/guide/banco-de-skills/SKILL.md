@@ -64,6 +64,24 @@ Si tampoco existen, dile al usuario que instale Banco de Skills y detente.
 - `skillbank show <nombre> --body --json` → frontmatter, cuerpo, archivos y diagnósticos.
 - `skillbank path <nombre>` → ruta de la skill dentro del banco (solo para leer).
 
+## Mantener las copias al día
+
+- `skillbank outdated --project . --json` → copias de este proyecto que no están al día
+  (`status`: `outdated`, `modified`, `diverged`, `missing`, `orphan`).
+- Ofrece `skillbank outdated --project . --update --json`: solo actualiza las `outdated`
+  (sin cambios locales). Para `modified`/`diverged`, pregunta: ¿subir los cambios (push) o
+  descartarlos (pull --force)?
+- `skillbank scan --json` → skills de este proyecto que aún no están en el banco
+  (`status: absent`). Ofrece subirlas; con permiso, `skillbank scan --import --json`.
+
+## Crear y compartir
+
+- Skill nueva: `skillbank new <nombre> --dir .claude/skills -d "Qué hace. Úsala cuando…" --json`
+  (plantillas: `basica`, `con-scripts`, `con-referencias`). Edítala y luego súbela con `push`.
+- Para subirla a claude.ai: `skillbank export <nombre> --claude-ai -o <carpeta> --json`.
+  Si falla por campos de Claude Code, ofrece `--strip-nonstandard` (solo cambia la copia).
+- Etiquetas: `skillbank tag <nombre> --add a,b --json`.
+
 ## Códigos de salida
 
 | Código | `code` | Qué hacer |
