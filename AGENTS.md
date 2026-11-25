@@ -40,6 +40,9 @@ scripts/install-desktop-entry.sh            # compila e instala la app en "Mostr
 - Nunca crear symlinks al instalar; nunca escribir a través de un symlink; nunca escribir
   en `~/.claude/skills/synced/`.
 - Las pruebas del CLI usan un HOME temporal (`tests/cli.rs`): no toques el HOME real.
+- Para compilar la app usa `pnpm tauri build` (o el script de instalación), nunca
+  `cargo build --release -p banco-de-skills`: sin la característica `custom-protocol` sale un
+  binario de desarrollo que busca la interfaz en `localhost:1420`.
 - `src/dev/fixtures.json` no debe contener rutas ni datos personales reales.
 - En Linux la ventana se identifica como `banco-de-skills` (nombre del binario): la entrada
   `.desktop` debe llamarse igual y llevar `StartupWMClass=banco-de-skills`.
