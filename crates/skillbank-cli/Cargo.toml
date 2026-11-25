@@ -1,0 +1,23 @@
+[package]
+name = "skillbank-cli"
+description = "CLI `skillbank` de Banco de Skills: conecta agentes de IA con tu banco personal de skills"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "skillbank"
+path = "src/main.rs"
+
+[dependencies]
+skillbank-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,30 @@
+[workspace]
+resolver = "3"
+members = ["crates/skillbank-core", "crates/skillbank-cli"]
+default-members = ["crates/skillbank-core", "crates/skillbank-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+
+
+[workspace.dependencies]
+skillbank-core = { path = "crates/skillbank-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+yaml_serde = "0.10"
+toml = "1.2"
+walkdir = "2.5"
+tempfile = "3.27"
+sha2 = "0.11"
+similar = "3.2"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+uuid = { version = "1.29", features = ["v4"] }
+clap = { version = "4.6", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.6"
+
+[profile.release]
+lto = "thin"
+strip = true
